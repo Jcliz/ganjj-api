@@ -7,6 +7,7 @@ import com.ganjj.entities.User;
 import com.ganjj.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Transactional
     public UserResponseDTO createUser(UserCreateDTO userCreateDTO) {
@@ -28,7 +32,7 @@ public class UserService {
         User newUser = new User();
         newUser.setName(userCreateDTO.getName());
         newUser.setEmail(userCreateDTO.getEmail());
-        newUser.setPassword(userCreateDTO.getPassword());
+        newUser.setPassword(passwordEncoder.encode(userCreateDTO.getPassword()));
         newUser.setAddress(userCreateDTO.getAddress());
         newUser.setRole(User.UserRole.USER);
 
@@ -46,7 +50,7 @@ public class UserService {
         User newUser = new User();
         newUser.setName(userCreateDTO.getName());
         newUser.setEmail(userCreateDTO.getEmail());
-        newUser.setPassword(userCreateDTO.getPassword());
+        newUser.setPassword(passwordEncoder.encode(userCreateDTO.getPassword()));
         newUser.setAddress(userCreateDTO.getAddress());
         newUser.setRole(User.UserRole.ADMIN);
 
@@ -88,7 +92,7 @@ public class UserService {
         }
         
         if (userUpdateDTO.getPassword() != null) {
-            user.setPassword(userUpdateDTO.getPassword());
+            user.setPassword(passwordEncoder.encode(userUpdateDTO.getPassword()));
         }
         
         if (userUpdateDTO.getAddress() != null) {

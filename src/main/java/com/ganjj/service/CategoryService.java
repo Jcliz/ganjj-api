@@ -97,7 +97,7 @@ public class CategoryService {
             Category parent = categoryRepository.findById(categoryUpdateDTO.getParentId())
                     .orElseThrow(() -> new EntityNotFoundException("Categoria pai não encontrada com o ID: " + categoryUpdateDTO.getParentId()));
             category.setParent(parent);
-        } else if (categoryUpdateDTO.getParentId() == null && categoryUpdateDTO.getParentId() != category.getParent()) {
+        } else if (categoryUpdateDTO.getParentId() == null && category.getParent() != null) {
             category.setParent(null);
         }
         

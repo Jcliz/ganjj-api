@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -34,6 +35,7 @@ public class UserController {
     }
     
     @PostMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponseDTO> createAdminUser(@Valid @RequestBody UserCreateDTO userCreateDTO) {
         UserResponseDTO createdUser = userService.createAdminUser(userCreateDTO);
 
@@ -44,16 +46,19 @@ public class UserController {
     }
     
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<UserResponseDTO> updateUser(
             @PathVariable Long id, 
             @Valid @RequestBody UserUpdateDTO userUpdateDTO) {
@@ -61,6 +66,7 @@ public class UserController {
     }
     
     @PatchMapping("/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponseDTO> updateUserRole(
             @PathVariable Long id, 
             @RequestBody Map<String, String> roleMap) {
@@ -72,6 +78,7 @@ public class UserController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();

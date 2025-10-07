@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -20,6 +21,7 @@ public class ShoppingBagController {
     private ShoppingBagService shoppingBagService;
 
     @PostMapping
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ShoppingBagResponseDTO> createShoppingBag(@Valid @RequestBody ShoppingBagCreateDTO createDTO) {
         ShoppingBagResponseDTO response = shoppingBagService.createShoppingBag(createDTO);
         
@@ -30,24 +32,28 @@ public class ShoppingBagController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ShoppingBagResponseDTO> getShoppingBag(@PathVariable Long id) {
         ShoppingBagResponseDTO response = shoppingBagService.getShoppingBag(id);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<List<ShoppingBagSummaryDTO>> getUserShoppingBags(@PathVariable Long userId) {
         List<ShoppingBagSummaryDTO> bags = shoppingBagService.getUserShoppingBags(userId);
         return ResponseEntity.ok(bags);
     }
 
     @GetMapping("/user/{userId}/active")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ShoppingBagResponseDTO> getActiveShoppingBag(@PathVariable Long userId) {
         ShoppingBagResponseDTO response = shoppingBagService.getActiveShoppingBag(userId);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{id}/items")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ShoppingBagResponseDTO> addItemToShoppingBag(
             @PathVariable Long id,
             @Valid @RequestBody ShoppingBagItemDTO itemDTO) {
@@ -56,6 +62,7 @@ public class ShoppingBagController {
     }
 
     @PutMapping("/{bagId}/items/{itemId}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ShoppingBagResponseDTO> updateItemQuantity(
             @PathVariable Long bagId,
             @PathVariable Long itemId,
@@ -65,6 +72,7 @@ public class ShoppingBagController {
     }
 
     @DeleteMapping("/{bagId}/items/{itemId}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ShoppingBagResponseDTO> removeItem(
             @PathVariable Long bagId,
             @PathVariable Long itemId) {
@@ -73,6 +81,7 @@ public class ShoppingBagController {
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ShoppingBagResponseDTO> updateShoppingBagStatus(
             @PathVariable Long id,
             @Valid @RequestBody ShoppingBagStatusDTO statusDTO) {
@@ -81,12 +90,14 @@ public class ShoppingBagController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteShoppingBag(@PathVariable Long id) {
         shoppingBagService.deleteShoppingBag(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}/clear")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ShoppingBagResponseDTO> clearShoppingBag(@PathVariable Long id) {
         ShoppingBagResponseDTO response = shoppingBagService.clearShoppingBag(id);
         return ResponseEntity.ok(response);
