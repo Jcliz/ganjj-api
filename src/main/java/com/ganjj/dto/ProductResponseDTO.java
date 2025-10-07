@@ -1,5 +1,6 @@
 package com.ganjj.dto;
 
+import com.ganjj.entities.Brand;
 import com.ganjj.entities.Category;
 import com.ganjj.entities.Product;
 import lombok.Data;
@@ -17,7 +18,7 @@ public class ProductResponseDTO {
     private BigDecimal price;
     private BigDecimal currentPrice;
     private Integer stockQuantity;
-    private String brand;
+    private BrandDTO brand;
     private List<String> imageUrls;
     private List<String> availableSizes;
     private List<String> availableColors;
@@ -37,7 +38,9 @@ public class ProductResponseDTO {
         this.price = product.getPrice();
         this.currentPrice = product.getCurrentPrice();
         this.stockQuantity = product.getStockQuantity();
-        this.brand = product.getBrand();
+        if (product.getBrand() != null) {
+            this.brand = new BrandDTO(product.getBrand());
+        }
         this.imageUrls = product.getImageUrls();
         this.availableSizes = product.getAvailableSizes();
         this.availableColors = product.getAvailableColors();
@@ -63,6 +66,19 @@ public class ProductResponseDTO {
         public CategoryDTO(Category category) {
             this.id = category.getId();
             this.name = category.getName();
+        }
+    }
+    
+    @Data
+    public static class BrandDTO {
+        private Long id;
+        private String name;
+        private String logoUrl;
+        
+        public BrandDTO(Brand brand) {
+            this.id = brand.getId();
+            this.name = brand.getName();
+            this.logoUrl = brand.getLogoUrl();
         }
     }
 }

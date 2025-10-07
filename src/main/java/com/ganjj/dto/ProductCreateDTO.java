@@ -27,8 +27,8 @@ public class ProductCreateDTO {
     @Min(value = 0, message = "A quantidade em estoque não pode ser negativa.")
     private Integer stockQuantity;
     
-    @NotBlank(message = "A marca não pode ser vazia.")
-    private String brand;
+    @NotNull(message = "O ID da marca não pode ser nulo.")
+    private Long brandId;
     
     private List<String> imageUrls;
     

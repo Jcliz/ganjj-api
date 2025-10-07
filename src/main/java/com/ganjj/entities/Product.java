@@ -31,8 +31,9 @@ public class Product {
     @Column(nullable = false)
     private Integer stockQuantity;
 
-    @Column(nullable = false)
-    private String brand;
+    @ManyToOne
+    @JoinColumn(name = "brand_id")
+    private Brand brand;
 
     @ElementCollection
     @CollectionTable(name = "tb_product_images", joinColumns = @JoinColumn(name = "product_id"))

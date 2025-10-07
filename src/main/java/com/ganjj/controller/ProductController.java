@@ -61,10 +61,11 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long brandId,
             @RequestParam(required = false) String search,
             @PageableDefault(size = 20) Pageable pageable) {
         
-        return ResponseEntity.ok(productService.searchProducts(minPrice, maxPrice, categoryId, search, pageable));
+        return ResponseEntity.ok(productService.searchProducts(minPrice, maxPrice, categoryId, brandId, search, pageable));
     }
     
     @GetMapping("/category/{categoryId}")
@@ -73,6 +74,14 @@ public class ProductController {
             @PageableDefault(size = 20) Pageable pageable) {
         
         return ResponseEntity.ok(productService.getProductsByCategory(categoryId, pageable));
+    }
+    
+    @GetMapping("/brand/{brandId}")
+    public ResponseEntity<Page<ProductResponseDTO>> getProductsByBrand(
+            @PathVariable Long brandId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        
+        return ResponseEntity.ok(productService.getProductsByBrand(brandId, pageable));
     }
     
     @PutMapping("/{id}")

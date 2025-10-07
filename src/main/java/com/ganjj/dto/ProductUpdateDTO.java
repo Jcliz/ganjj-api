@@ -19,7 +19,7 @@ public class ProductUpdateDTO {
     @Min(value = 0, message = "A quantidade em estoque não pode ser negativa.")
     private Integer stockQuantity;
     
-    private String brand;
+    private Long brandId;
     
     private List<String> imageUrls;
     

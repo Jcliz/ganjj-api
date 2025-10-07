@@ -3,8 +3,10 @@ package com.ganjj.service;
 import com.ganjj.dto.ProductCreateDTO;
 import com.ganjj.dto.ProductResponseDTO;
 import com.ganjj.dto.ProductUpdateDTO;
+import com.ganjj.entities.Brand;
 import com.ganjj.entities.Category;
 import com.ganjj.entities.Product;
+import com.ganjj.repository.BrandRepository;
 import com.ganjj.repository.CategoryRepository;
 import com.ganjj.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -28,6 +30,9 @@ public class ProductService {
     @Autowired
     private CategoryRepository categoryRepository;
     
+    @Autowired
+    private BrandRepository brandRepository;
+    
     @Transactional
     public ProductResponseDTO createProduct(ProductCreateDTO productCreateDTO) {
         Product product = new Product();
@@ -35,7 +40,12 @@ public class ProductService {
         product.setDescription(productCreateDTO.getDescription());
         product.setPrice(productCreateDTO.getPrice());
         product.setStockQuantity(productCreateDTO.getStockQuantity());
-        product.setBrand(productCreateDTO.getBrand());
+        
+        if (productCreateDTO.getBrandId() != null) {
+            Brand brand = brandRepository.findById(productCreateDTO.getBrandId())
+                    .orElseThrow(() -> new EntityNotFoundException("Marca não encontrada com o ID: " + productCreateDTO.getBrandId()));
+            product.setBrand(brand);
+        }
         
         if (productCreateDTO.getImageUrls() != null) {
             product.setImageUrls(productCreateDTO.getImageUrls());
@@ -102,9 +112,9 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Page<ProductResponseDTO> searchProducts(
             BigDecimal minPrice, BigDecimal maxPrice, 
-            Long categoryId, String search, Pageable pageable) {
+            Long categoryId, Long brandId, String search, Pageable pageable) {
         
-        Page<Product> products = productRepository.findByFilters(true, minPrice, maxPrice, categoryId, search, pageable);
+        Page<Product> products = productRepository.findByFilters(true, minPrice, maxPrice, categoryId, brandId, search, pageable);
         return products.map(ProductResponseDTO::new);
     }
     
@@ -114,6 +124,16 @@ public class ProductService {
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + categoryId));
         
         Page<Product> products = productRepository.findByCategoryAndActive(category, true, pageable);
+        return products.map(ProductResponseDTO::new);
+    }
+    
+    @Transactional(readOnly = true)
+    public Page<ProductResponseDTO> getProductsByBrand(Long brandId, Pageable pageable) {
+        if (!brandRepository.existsById(brandId)) {
+            throw new EntityNotFoundException("Marca não encontrada com o ID: " + brandId);
+        }
+        
+        Page<Product> products = productRepository.findByBrandIdAndActive(brandId, true, pageable);
         return products.map(ProductResponseDTO::new);
     }
     
@@ -138,8 +158,10 @@ public class ProductService {
             product.setStockQuantity(productUpdateDTO.getStockQuantity());
         }
         
-        if (productUpdateDTO.getBrand() != null) {
-            product.setBrand(productUpdateDTO.getBrand());
+        if (productUpdateDTO.getBrandId() != null) {
+            Brand brand = brandRepository.findById(productUpdateDTO.getBrandId())
+                    .orElseThrow(() -> new EntityNotFoundException("Marca não encontrada com o ID: " + productUpdateDTO.getBrandId()));
+            product.setBrand(brand);
         }
         
         if (productUpdateDTO.getImageUrls() != null) {
