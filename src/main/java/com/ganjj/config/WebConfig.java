@@ -11,7 +11,11 @@ public class WebConfig {
     public FilterRegistrationBean<AdminAuthorizationFilter> adminAuthorizationFilter(AdminAuthorizationFilter filter) {
         FilterRegistrationBean<AdminAuthorizationFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(filter);
-        registrationBean.addUrlPatterns("/api/users/*");
+        registrationBean.addUrlPatterns(
+            "/api/users/*",
+            "/api/products/*",
+            "/api/categories/*"
+        );
         return registrationBean;
     }
 }

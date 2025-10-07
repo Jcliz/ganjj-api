@@ -13,10 +13,12 @@ import java.util.List;
 
 @Component
 public class AdminAuthorizationFilter implements Filter {
-
     private static final List<String> PROTECTED_ADMIN_PATHS = Arrays.asList(
             "/api/users/admin",
-            "/api/users/"
+            "/api/users/",
+            "/api/products/admin",
+            "/api/products/",
+            "/api/categories/"
     );
 
     @Autowired
@@ -46,6 +48,24 @@ public class AdminAuthorizationFilter implements Filter {
     private boolean isAdminProtectedRoute(String path, String method) {
         if (path.equals("/api/users") && method.equals("POST")) {
             return false;
+        }
+
+        if (path.equals("/api/products") && method.equals("GET")) {
+            return false;
+        }
+        
+        if (path.startsWith("/api/products/") && method.equals("GET") && 
+            !path.startsWith("/api/products/admin/")) {
+            return false; 
+        }
+        
+        if (path.equals("/api/categories") && method.equals("GET")) {
+            return false; 
+        }
+        
+        if (path.startsWith("/api/categories/") && method.equals("GET") && 
+            !path.startsWith("/api/categories/admin/")) {
+            return false; 
         }
         
         for (String protectedPath : PROTECTED_ADMIN_PATHS) {
