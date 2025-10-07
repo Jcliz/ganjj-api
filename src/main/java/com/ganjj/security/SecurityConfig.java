@@ -2,6 +2,7 @@ package com.ganjj.security;
 
 import com.ganjj.security.jwt.JwtAuthenticationEntryPoint;
 import com.ganjj.security.jwt.JwtAuthenticationFilter;
+import com.ganjj.config.CorsProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +32,9 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthenticationEntryPoint unauthorizedHandler;
+    
+    @Autowired
+    private CorsProperties corsProperties;
 
     @Bean
     public JwtAuthenticationFilter authenticationJwtTokenFilter() {
@@ -59,7 +63,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
+        configuration.setAllowedOrigins(corsProperties.getOrigins());
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token", "x-admin-role"));
         configuration.setAllowCredentials(true);

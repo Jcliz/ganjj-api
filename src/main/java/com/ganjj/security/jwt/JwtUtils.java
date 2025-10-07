@@ -1,5 +1,6 @@
 package com.ganjj.security.jwt;
 
+import com.ganjj.config.JwtProperties;
 import com.ganjj.security.UserDetailsImpl;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -8,7 +9,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -21,14 +22,20 @@ import java.util.Date;
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
     
-    @Value("${jwt.secret}")
-    private String jwtSecret;
-
-    @Value("${jwt.expiration}")
-    private int jwtExpirationMs;
-
-    @Value("${jwt.refresh-token.expiration}")
-    private int refreshTokenExpirationMs;
+    @Autowired
+    private JwtProperties jwtProperties;
+    
+    private String getJwtSecret() {
+        return jwtProperties.getSecret();
+    }
+    
+    private long getJwtExpirationMs() {
+        return jwtProperties.getExpiration();
+    }
+    
+    private long getRefreshTokenExpirationMs() {
+        return jwtProperties.getRefreshToken().getExpiration();
+    }
 
     public String generateJwtToken(Authentication authentication) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
@@ -36,7 +43,7 @@ public class JwtUtils {
         return Jwts.builder()
                 .setSubject((userPrincipal.getUsername()))
                 .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .setExpiration(new Date((new Date()).getTime() + getJwtExpirationMs()))
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -45,7 +52,7 @@ public class JwtUtils {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .setExpiration(new Date((new Date()).getTime() + getJwtExpirationMs()))
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -54,7 +61,7 @@ public class JwtUtils {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + refreshTokenExpirationMs))
+                .setExpiration(new Date((new Date()).getTime() + getRefreshTokenExpirationMs()))
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -76,7 +83,7 @@ public class JwtUtils {
     }
     
     private SecretKey key() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(getJwtSecret()));
     }
 
     public String getUsernameFromJwtToken(String token) {
