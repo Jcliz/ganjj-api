@@ -16,10 +16,6 @@ public class ShoppingBagItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "shopping_bag_id", nullable = false)
-    private ShoppingBag shoppingBag;
-
     @Column(nullable = false)
     private String productId;
 
@@ -42,6 +38,10 @@ public class ShoppingBagItem {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    @ManyToOne
+    @JoinColumn(name = "shopping_bag_id", nullable = false)
+    private ShoppingBag shoppingBag;
 
     @PrePersist
     public void prePersist() {

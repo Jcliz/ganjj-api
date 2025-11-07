@@ -33,7 +33,7 @@ public class UserService {
         newUser.setName(userCreateDTO.getName());
         newUser.setEmail(userCreateDTO.getEmail());
         newUser.setPassword(passwordEncoder.encode(userCreateDTO.getPassword()));
-        newUser.setAddress(userCreateDTO.getAddress());
+        newUser.setPhone(userCreateDTO.getPhone());
         newUser.setRole(User.UserRole.USER);
 
         User savedUser = userRepository.save(newUser);
@@ -51,7 +51,7 @@ public class UserService {
         newUser.setName(userCreateDTO.getName());
         newUser.setEmail(userCreateDTO.getEmail());
         newUser.setPassword(passwordEncoder.encode(userCreateDTO.getPassword()));
-        newUser.setAddress(userCreateDTO.getAddress());
+        newUser.setPhone(userCreateDTO.getPhone());
         newUser.setRole(User.UserRole.ADMIN);
 
         User savedUser = userRepository.save(newUser);
@@ -95,8 +95,8 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(userUpdateDTO.getPassword()));
         }
         
-        if (userUpdateDTO.getAddress() != null) {
-            user.setAddress(userUpdateDTO.getAddress());
+        if (userUpdateDTO.getPhone() != null) {
+            user.setPhone(userUpdateDTO.getPhone());
         }
         
         User savedUser = userRepository.save(user);

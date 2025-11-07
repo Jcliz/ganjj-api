@@ -70,6 +70,12 @@ public class Product {
 
     private LocalDateTime updatedAt;
 
+    @OneToMany(mappedBy = "product")
+    private List<ProductReview> reviews = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product")
+    private List<OrderItem> orderItems = new ArrayList<>();
+
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();

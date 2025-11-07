@@ -10,7 +10,7 @@ public class UserResponseDTO {
     private Long id;
     private String name;
     private String email;
-    private String address;
+    private String phone;
     private String role;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -19,7 +19,7 @@ public class UserResponseDTO {
         this.id = user.getId();
         this.name = user.getName();
         this.email = user.getEmail();
-        this.address = user.getAddress();
+        this.phone = user.getPhone();
         this.role = user.getRole().toString();
         this.createdAt = user.getCreatedAt();
         this.updatedAt = user.getUpdatedAt();

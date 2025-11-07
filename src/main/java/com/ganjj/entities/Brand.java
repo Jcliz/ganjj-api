@@ -32,13 +32,13 @@ public class Brand {
     @Column(nullable = false)
     private Boolean active = true;
     
-    @OneToMany(mappedBy = "brand")
-    private List<Product> products = new ArrayList<>();
-    
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+    
+    @OneToMany(mappedBy = "brand")
+    private List<Product> products = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {

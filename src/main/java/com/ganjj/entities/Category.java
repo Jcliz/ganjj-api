@@ -25,6 +25,13 @@ public class Category {
     
     private String imageUrl;
     
+    private Boolean active = true;
+    
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+    
     @OneToMany(mappedBy = "category")
     private List<Product> products = new ArrayList<>();
     
@@ -34,13 +41,6 @@ public class Category {
     
     @OneToMany(mappedBy = "parent")
     private List<Category> subcategories = new ArrayList<>();
-    
-    private Boolean active = true;
-    
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
 
     @PrePersist
     public void prePersist() {

@@ -30,7 +30,7 @@ public class DevInitializer {
                 adminUser.setEmail("admin@ganjj.com");
                 adminUser.setPassword(passwordEncoder.encode("admin123"));
                 adminUser.setRole(User.UserRole.ADMIN);
-                adminUser.setAddress("Rua Admin, 123");
+                adminUser.setPhone("(11) 98765-4321");
                 userRepository.save(adminUser);
                 
                 User regularUser = new User();
@@ -38,7 +38,7 @@ public class DevInitializer {
                 regularUser.setEmail("cliente@teste.com");
                 regularUser.setPassword(passwordEncoder.encode("cliente123"));
                 regularUser.setRole(User.UserRole.USER);
-                regularUser.setAddress("Rua Cliente, 456");
+                regularUser.setPhone("(11) 91234-5678");
                 userRepository.save(regularUser);
                 
                 System.out.println("Usuários de teste criados com sucesso!");

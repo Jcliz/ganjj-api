@@ -18,10 +18,6 @@ public class ShoppingBag {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
     @Column(nullable = false)
     private BigDecimal totalAmount = BigDecimal.ZERO;
 
@@ -29,13 +25,17 @@ public class ShoppingBag {
     @Column(nullable = false)
     private ShoppingBagStatus status = ShoppingBagStatus.OPEN;
 
-    @OneToMany(mappedBy = "shoppingBag", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ShoppingBagItem> items = new ArrayList<>();
-
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @OneToMany(mappedBy = "shoppingBag", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ShoppingBagItem> items = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {

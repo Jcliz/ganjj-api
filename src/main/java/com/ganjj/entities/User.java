@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tb_users")
@@ -24,7 +26,8 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    private String address;
+    @Column(length = 20)
+    private String phone;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -34,6 +37,18 @@ public class User {
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "user")
+    private List<Order> orders = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Address> addresses = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<ProductReview> reviews = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<ShoppingBag> shoppingBags = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
@@ -79,12 +94,12 @@ public class User {
         this.password = password;
     }
 
-    public String getAddress() {
-        return address;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public UserRole getRole() {
