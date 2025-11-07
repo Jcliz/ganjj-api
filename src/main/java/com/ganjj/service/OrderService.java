@@ -65,7 +65,6 @@ public class OrderService {
         order.setNotes(createDTO.getNotes());
         order.setDeliveryAddress(address);
 
-        // Copiar dados do endereço para o pedido
         order.setDeliveryStreet(address.getStreet());
         order.setDeliveryNumber(address.getNumber());
         order.setDeliveryComplement(address.getComplement());
@@ -74,7 +73,6 @@ public class OrderService {
         order.setDeliveryState(address.getState());
         order.setDeliveryZipCode(address.getZipCode());
 
-        // Converter itens da sacola em itens do pedido
         for (ShoppingBagItem bagItem : shoppingBag.getItems()) {
             Product product = productRepository.findById(Long.parseLong(bagItem.getProductId()))
                     .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com o ID: " + bagItem.getProductId()));
@@ -91,7 +89,6 @@ public class OrderService {
 
             order.addItem(orderItem);
 
-            // Atualizar estoque
             if (product.getStockQuantity() < bagItem.getQuantity()) {
                 throw new IllegalStateException("Estoque insuficiente para o produto: " + product.getName());
             }
@@ -101,7 +98,6 @@ public class OrderService {
 
         order.recalculateTotalAmount();
 
-        // Atualizar status da sacola
         shoppingBag.setStatus(ShoppingBag.ShoppingBagStatus.COMPLETED);
         shoppingBagRepository.save(shoppingBag);
 
@@ -142,10 +138,8 @@ public class OrderService {
         if (updateDTO.getOrderStatus() != null) {
             order.setStatus(updateDTO.getOrderStatus());
 
-            // Atualizar datas conforme o status
             switch (updateDTO.getOrderStatus()) {
                 case CONFIRMED:
-                    // Pedido confirmado, sem data específica
                     break;
                 case SHIPPED:
                     order.setShippedDate(LocalDateTime.now());
@@ -155,7 +149,6 @@ public class OrderService {
                     break;
                 case CANCELLED:
                     order.setCancelledDate(LocalDateTime.now());
-                    // Devolver estoque
                     returnStockOnCancellation(order);
                     break;
                 default:
@@ -196,7 +189,6 @@ public class OrderService {
             throw new IllegalStateException("Não é possível excluir um pedido que já foi enviado ou entregue.");
         }
 
-        // Devolver estoque se não foi cancelado
         if (order.getStatus() != Order.OrderStatus.CANCELLED) {
             returnStockOnCancellation(order);
         }

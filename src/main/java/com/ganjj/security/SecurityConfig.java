@@ -88,6 +88,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/brands/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/users/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/users/**").authenticated()
                 .requestMatchers("/api/shopping-bags/**").authenticated()

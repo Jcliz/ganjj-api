@@ -43,13 +43,11 @@ public class AddressService {
         address.setType(createDTO.getType() != null ? createDTO.getType() : Address.AddressType.HOME);
         address.setReference(createDTO.getReference());
 
-        // Se for marcado como padrão ou se for o primeiro endereço, definir como padrão
         List<Address> userAddresses = addressRepository.findByUserIdAndActiveTrue(user.getId());
         boolean isFirstAddress = userAddresses.isEmpty();
         boolean shouldBeDefault = (createDTO.getIsDefault() != null && createDTO.getIsDefault()) || isFirstAddress;
 
         if (shouldBeDefault) {
-            // Remover padrão dos outros endereços
             userAddresses.forEach(addr -> {
                 addr.setIsDefault(false);
                 addressRepository.save(addr);
@@ -166,14 +164,12 @@ public class AddressService {
         Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + id));
 
-        // Remover padrão dos outros endereços do usuário
         List<Address> userAddresses = addressRepository.findByUserId(address.getUser().getId());
         userAddresses.forEach(addr -> {
             addr.setIsDefault(false);
             addressRepository.save(addr);
         });
 
-        // Definir este como padrão
         address.setIsDefault(true);
         Address updatedAddress = addressRepository.save(address);
         return new AddressResponseDTO(updatedAddress);
@@ -185,7 +181,6 @@ public class AddressService {
                 .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + id));
 
         if (address.getIsDefault()) {
-            // Se for o endereço padrão, tentar definir outro como padrão
             List<Address> otherAddresses = addressRepository.findByUserIdAndActiveTrue(address.getUser().getId())
                     .stream()
                     .filter(addr -> !addr.getId().equals(id))

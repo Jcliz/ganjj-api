@@ -46,17 +46,10 @@ public class TestInitializer {
     @Bean
     public CommandLineRunner loadTestData() {
         return args -> {
-            System.out.println("\n========================================");
-            System.out.println("🚀 POPULANDO BANCO DE DADOS DE TESTE");
-            System.out.println("========================================\n");
-
-            // 1️⃣ CRIAR USUÁRIOS
             User adminUser = null;
             User regularUser = null;
             
             if (userRepository.count() == 0) {
-                System.out.println("✓ Criando usuários...");
-
                 adminUser = new User();
                 adminUser.setName("Administrador");
                 adminUser.setEmail("admin@ganjj.com");
@@ -79,14 +72,11 @@ public class TestInitializer {
                 regularUser = userRepository.findByEmail("joao@email.com").orElse(null);
             }
 
-            // 2️⃣ CRIAR ENDEREÇOS
             Address addressAdmin = null;
             Address addressUser1 = null;
             Address addressUser2 = null;
             
             if (addressRepository.count() == 0 && regularUser != null) {
-                System.out.println("✓ Criando endereços...");
-
                 addressAdmin = new Address();
                 addressAdmin.setUser(adminUser);
                 addressAdmin.setRecipientName("Administrador");
@@ -130,18 +120,14 @@ public class TestInitializer {
                 addressUser2.setIsDefault(false);
                 addressRepository.save(addressUser2);
 
-                System.out.println("  → 3 endereços criados");
             } else {
                 addressUser1 = addressRepository.findByUserIdAndIsDefaultTrue(regularUser.getId()).orElse(null);
             }
 
-            // 3️⃣ CRIAR MARCAS
             Brand nike = null;
             Brand adidas = null;
             
             if (brandRepository.count() == 0) {
-                System.out.println("✓ Criando marcas...");
-
                 nike = new Brand();
                 nike.setName("Nike");
                 nike.setDescription("Just Do It");
@@ -156,19 +142,15 @@ public class TestInitializer {
                 adidas.setActive(true);
                 brandRepository.save(adidas);
 
-                System.out.println("  → 2 marcas criadas");
             } else {
                 nike = brandRepository.findByName("Nike").orElse(null);
                 adidas = brandRepository.findByName("Adidas").orElse(null);
             }
 
-            // 4️⃣ CRIAR CATEGORIAS
             Category calcados = null;
             Category roupas = null;
             
             if (categoryRepository.count() == 0) {
-                System.out.println("✓ Criando categorias...");
-
                 roupas = new Category();
                 roupas.setName("Roupas");
                 roupas.setDescription("Vestuário em geral");
@@ -181,19 +163,15 @@ public class TestInitializer {
                 calcados.setActive(true);
                 categoryRepository.save(calcados);
 
-                System.out.println("  → 2 categorias criadas");
             } else {
                 calcados = categoryRepository.findByName("Calçados").orElse(null);
                 roupas = categoryRepository.findByName("Roupas").orElse(null);
             }
 
-            // 5️⃣ CRIAR PRODUTOS
             Product tenis = null;
             Product camiseta = null;
             
             if (productRepository.count() == 0 && nike != null && calcados != null) {
-                System.out.println("✓ Criando produtos...");
-
                 tenis = new Product();
                 tenis.setName("Tênis Nike Air Max");
                 tenis.setDescription("Tênis esportivo com tecnologia Air Max para maior conforto");
@@ -223,18 +201,14 @@ public class TestInitializer {
                 camiseta.setMaterial("Poliéster");
                 productRepository.save(camiseta);
 
-                System.out.println("  → 2 produtos criados");
             } else {
                 tenis = productRepository.findAll().stream().findFirst().orElse(null);
                 camiseta = productRepository.findAll().stream().skip(1).findFirst().orElse(null);
             }
 
-            // 6️⃣ CRIAR SACOLA DE COMPRAS
             ShoppingBag shoppingBag = null;
             
             if (shoppingBagRepository.count() == 0 && regularUser != null && tenis != null) {
-                System.out.println("✓ Criando sacola de compras...");
-
                 shoppingBag = new ShoppingBag();
                 shoppingBag.setUser(regularUser);
                 shoppingBag.setStatus(ShoppingBag.ShoppingBagStatus.OPEN);
@@ -262,13 +236,9 @@ public class TestInitializer {
 
                 shoppingBagRepository.save(shoppingBag);
 
-                System.out.println("  → 1 sacola criada com 2 itens");
             }
 
-            // 7️⃣ CRIAR PEDIDO
             if (orderRepository.count() == 0 && regularUser != null && addressUser1 != null && tenis != null) {
-                System.out.println("✓ Criando pedido...");
-
                 Order order = new Order();
                 order.setUser(regularUser);
                 order.setDeliveryAddress(addressUser1);
@@ -276,7 +246,6 @@ public class TestInitializer {
                 order.setPaymentStatus(Order.PaymentStatus.PAID);
                 order.setStatus(Order.OrderStatus.CONFIRMED);
                 
-                // Copiar dados do endereço
                 order.setDeliveryStreet(addressUser1.getStreet());
                 order.setDeliveryNumber(addressUser1.getNumber());
                 order.setDeliveryComplement(addressUser1.getComplement());
@@ -300,13 +269,9 @@ public class TestInitializer {
                 
                 orderRepository.save(order);
 
-                System.out.println("  → 1 pedido criado");
             }
 
-            // 8️⃣ CRIAR AVALIAÇÕES
             if (reviewRepository.count() == 0 && regularUser != null && tenis != null) {
-                System.out.println("✓ Criando avaliações...");
-
                 ProductReview review = new ProductReview();
                 review.setUser(regularUser);
                 review.setProduct(tenis);
@@ -315,24 +280,7 @@ public class TestInitializer {
                 review.setVerifiedPurchase(true);
                 review.setActive(true);
                 reviewRepository.save(review);
-
-                System.out.println("  → 1 avaliação criada");
             }
-
-            System.out.println("\n========================================");
-            System.out.println("✅ BANCO POPULADO COM SUCESSO!");
-            System.out.println("========================================");
-            System.out.println("\n📊 Dados criados:");
-            System.out.println("   • 2 Usuários");
-            System.out.println("   • 3 Endereços");
-            System.out.println("   • 2 Marcas");
-            System.out.println("   • 2 Categorias");
-            System.out.println("   • 2 Produtos");
-            System.out.println("   • 1 Sacola de Compras (com 2 itens)");
-            System.out.println("   • 1 Pedido");
-            System.out.println("   • 1 Avaliação");
-            System.out.println("\n🔑 Login Admin: admin@ganjj.com / admin123");
-            System.out.println("🔑 Login User:  joao@email.com / cliente123\n");
         };
     }
 }

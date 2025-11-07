@@ -34,10 +34,10 @@ public class Address {
     private String city;
 
     @Column(nullable = false, length = 2)
-    private String state; // UF (SP, RJ, MG, etc.)
+    private String state; 
 
     @Column(nullable = false, length = 9)
-    private String zipCode; // CEP (formato: 12345-678)
+    private String zipCode;
 
     @Column(nullable = false)
     private String phone;

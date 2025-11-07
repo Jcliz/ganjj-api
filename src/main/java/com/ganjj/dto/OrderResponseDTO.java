@@ -22,7 +22,6 @@ public class OrderResponseDTO {
     private Order.PaymentMethod paymentMethod;
     private Order.PaymentStatus paymentStatus;
     
-    // Endereço de entrega
     private String deliveryStreet;
     private String deliveryNumber;
     private String deliveryComplement;

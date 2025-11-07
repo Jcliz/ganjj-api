@@ -40,7 +40,6 @@ public class ProductReviewService {
         Product product = productRepository.findById(createDTO.getProductId())
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com o ID: " + createDTO.getProductId()));
 
-        // Verificar se o usuário já avaliou este produto
         Optional<ProductReview> existingReview = reviewRepository.findByUserIdAndProductId(
                 createDTO.getUserId(), createDTO.getProductId());
 
@@ -55,7 +54,6 @@ public class ProductReviewService {
         review.setComment(createDTO.getComment());
         review.setImageUrls(createDTO.getImageUrls() != null ? createDTO.getImageUrls() : new java.util.ArrayList<>());
 
-        // Verificar se é compra verificada
         if (createDTO.getOrderId() != null) {
             Order order = orderRepository.findById(createDTO.getOrderId())
                     .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com o ID: " + createDTO.getOrderId()));
@@ -64,7 +62,6 @@ public class ProductReviewService {
                 throw new IllegalArgumentException("O pedido não pertence ao usuário informado.");
             }
 
-            // Verificar se o produto está no pedido
             boolean productInOrder = order.getItems().stream()
                     .anyMatch(item -> item.getProduct().getId().equals(product.getId()));
 

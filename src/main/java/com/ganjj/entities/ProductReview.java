@@ -17,7 +17,7 @@ public class ProductReview {
     private Long id;
 
     @Column(nullable = false)
-    private Integer rating; // 1 a 5 estrelas
+    private Integer rating; 
 
     @Column(length = 1000)
     private String comment;
