@@ -3,6 +3,7 @@ package com.ganjj.controller;
 import com.ganjj.dto.ProductReviewCreateDTO;
 import com.ganjj.dto.ProductReviewResponseDTO;
 import com.ganjj.dto.ProductReviewUpdateDTO;
+import com.ganjj.security.UserDetailsImpl;
 import com.ganjj.service.ProductReviewService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
@@ -10,12 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -26,7 +27,20 @@ public class ProductReviewController {
 
     @PostMapping
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<ProductReviewResponseDTO> createReview(@Valid @RequestBody ProductReviewCreateDTO createDTO) {
+    public ResponseEntity<?> createReview(
+            @Valid @RequestBody ProductReviewCreateDTO createDTO,
+            Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Long authenticatedUserId = userDetails.getId();
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin && !authenticatedUserId.equals(createDTO.getUserId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Você só pode criar avaliações para si mesmo.");
+        }
+        
         ProductReviewResponseDTO createdReview = reviewService.createReview(createDTO);
 
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
@@ -42,7 +56,20 @@ public class ProductReviewController {
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<List<ProductReviewResponseDTO>> getUserReviews(@PathVariable Long userId) {
+    public ResponseEntity<?> getUserReviews(
+            @PathVariable Long userId,
+            Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Long authenticatedUserId = userDetails.getId();
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin && !authenticatedUserId.equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Você só pode listar suas próprias avaliações.");
+        }
+        
         return ResponseEntity.ok(reviewService.getUserReviews(userId));
     }
 
@@ -51,33 +78,43 @@ public class ProductReviewController {
         return ResponseEntity.ok(reviewService.getReviewById(id));
     }
 
-    @GetMapping("/product/{productId}/average")
-    public ResponseEntity<Map<String, Object>> getProductRatingStats(@PathVariable Long productId) {
-        Double average = reviewService.getProductAverageRating(productId);
-        Long count = reviewService.getProductReviewCount(productId);
-
-        return ResponseEntity.ok(Map.of(
-                "averageRating", average,
-                "reviewCount", count
-        ));
-    }
-
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<ProductReviewResponseDTO> updateReview(
+    public ResponseEntity<?> updateReview(
             @PathVariable Long id,
-            @Valid @RequestBody ProductReviewUpdateDTO updateDTO) {
+            @Valid @RequestBody ProductReviewUpdateDTO updateDTO,
+            Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Long authenticatedUserId = userDetails.getId();
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+        
+        ProductReviewResponseDTO existingReview = reviewService.getReviewById(id);
+        
+        if (!isAdmin && !authenticatedUserId.equals(existingReview.getUserId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Você só pode atualizar suas próprias avaliações.");
+        }
+        
         return ResponseEntity.ok(reviewService.updateReview(id, updateDTO));
-    }
-
-    @PostMapping("/{id}/helpful")
-    public ResponseEntity<ProductReviewResponseDTO> markAsHelpful(@PathVariable Long id) {
-        return ResponseEntity.ok(reviewService.markAsHelpful(id));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
+    public ResponseEntity<?> deleteReview(@PathVariable Long id, Authentication authentication) {
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Long authenticatedUserId = userDetails.getId();
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+        
+        ProductReviewResponseDTO existingReview = reviewService.getReviewById(id);
+        
+        if (!isAdmin && !authenticatedUserId.equals(existingReview.getUserId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Você só pode deletar suas próprias avaliações.");
+        }
+        
         reviewService.deleteReview(id);
         return ResponseEntity.noContent().build();
     }

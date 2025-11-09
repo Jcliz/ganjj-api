@@ -129,31 +129,4 @@ public class ProductReviewService {
         
         reviewRepository.delete(review);
     }
-
-    @Transactional
-    public ProductReviewResponseDTO markAsHelpful(Long id) {
-        ProductReview review = reviewRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Avaliação não encontrada com o ID: " + id));
-
-        review.setHelpfulCount(review.getHelpfulCount() + 1);
-        ProductReview updatedReview = reviewRepository.save(review);
-        return new ProductReviewResponseDTO(updatedReview);
-    }
-
-    @Transactional(readOnly = true)
-    public Double getProductAverageRating(Long productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new EntityNotFoundException("Produto não encontrado com o ID: " + productId);
-        }
-        Double average = reviewRepository.getAverageRatingByProductId(productId);
-        return average != null ? average : 0.0;
-    }
-
-    @Transactional(readOnly = true)
-    public Long getProductReviewCount(Long productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new EntityNotFoundException("Produto não encontrado com o ID: " + productId);
-        }
-        return reviewRepository.countByProductId(productId);
-    }
 }

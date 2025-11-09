@@ -28,7 +28,6 @@ public class ShoppingBagController {
             @Valid @RequestBody ShoppingBagCreateDTO createDTO,
             Authentication authentication) {
         
-        // Verifica se o usuário está criando shopping bag para si mesmo ou se é admin
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));

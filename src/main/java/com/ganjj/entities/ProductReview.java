@@ -28,8 +28,6 @@ public class ProductReview {
     @Column(nullable = false)
     private Boolean active = true;
 
-    private Integer helpfulCount = 0;
-
     @Column(updatable = false)
     private LocalDateTime createdAt;
 

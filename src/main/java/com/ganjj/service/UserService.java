@@ -69,7 +69,6 @@ public class UserService {
     
     @Transactional(readOnly = true)
     public UserResponseDTO getUserById(Long id) {
-        // Força a leitura do banco de dados, não do cache
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
                 
@@ -81,7 +80,6 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
         
-        // Agora o email pode ser alterado pois o JWT usa ID
         if (userUpdateDTO.getEmail() != null && !userUpdateDTO.getEmail().equals(user.getEmail())) {
             if (userRepository.findByEmail(userUpdateDTO.getEmail()).isPresent()) {
                 throw new IllegalArgumentException("E-mail já cadastrado para outro usuário.");
@@ -127,7 +125,6 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
         
-        // O cascade ALL vai deletar automaticamente orders, addresses, reviews e shopping bags
         userRepository.delete(user);
         userRepository.flush();
     }
