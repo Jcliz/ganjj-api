@@ -46,29 +46,10 @@ public class ProductService {
             product.setBrand(brand);
         }
         
-        if (productCreateDTO.getAvailableSizes() != null) {
-            product.setAvailableSizes(productCreateDTO.getAvailableSizes());
-        }
-        
-        if (productCreateDTO.getAvailableColors() != null) {
-            product.setAvailableColors(productCreateDTO.getAvailableColors());
-        }
-        
         if (productCreateDTO.getCategoryId() != null) {
             Category category = categoryRepository.findById(productCreateDTO.getCategoryId())
                     .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + productCreateDTO.getCategoryId()));
             product.setCategory(category);
-        }
-        
-        product.setMaterial(productCreateDTO.getMaterial());
-        product.setCareInstructions(productCreateDTO.getCareInstructions());
-        
-        if (productCreateDTO.getFeatured() != null) {
-            product.setFeatured(productCreateDTO.getFeatured());
-        }
-        
-        if (productCreateDTO.getDiscountPercent() != null) {
-            product.setDiscountPercent(productCreateDTO.getDiscountPercent());
         }
         
         Product savedProduct = productRepository.save(product);
@@ -80,6 +61,14 @@ public class ProductService {
     public Page<ProductResponseDTO> getAllProducts(Pageable pageable) {
         Page<Product> products = productRepository.findAll(pageable);
         return products.map(ProductResponseDTO::new);
+    }
+    
+    @Transactional(readOnly = true)
+    public List<ProductResponseDTO> getAllProductsList() {
+        List<Product> products = productRepository.findAll();
+        return products.stream()
+                .map(ProductResponseDTO::new)
+                .collect(Collectors.toList());
     }
     
     @Transactional(readOnly = true)
@@ -97,38 +86,11 @@ public class ProductService {
     }
     
     @Transactional(readOnly = true)
-    public List<ProductResponseDTO> getFeaturedProducts() {
-        List<Product> products = productRepository.findByFeaturedAndActive(true, true);
-        return products.stream()
-                .map(ProductResponseDTO::new)
-                .collect(Collectors.toList());
-    }
-    
-    @Transactional(readOnly = true)
     public Page<ProductResponseDTO> searchProducts(
             BigDecimal minPrice, BigDecimal maxPrice, 
             Long categoryId, Long brandId, String search, Pageable pageable) {
         
         Page<Product> products = productRepository.findByFilters(true, minPrice, maxPrice, categoryId, brandId, search, pageable);
-        return products.map(ProductResponseDTO::new);
-    }
-    
-    @Transactional(readOnly = true)
-    public Page<ProductResponseDTO> getProductsByCategory(Long categoryId, Pageable pageable) {
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + categoryId));
-        
-        Page<Product> products = productRepository.findByCategoryAndActive(category, true, pageable);
-        return products.map(ProductResponseDTO::new);
-    }
-    
-    @Transactional(readOnly = true)
-    public Page<ProductResponseDTO> getProductsByBrand(Long brandId, Pageable pageable) {
-        if (!brandRepository.existsById(brandId)) {
-            throw new EntityNotFoundException("Marca não encontrada com o ID: " + brandId);
-        }
-        
-        Page<Product> products = productRepository.findByBrandIdAndActive(brandId, true, pageable);
         return products.map(ProductResponseDTO::new);
     }
     
@@ -159,38 +121,14 @@ public class ProductService {
             product.setBrand(brand);
         }
         
-        if (productUpdateDTO.getAvailableSizes() != null) {
-            product.setAvailableSizes(productUpdateDTO.getAvailableSizes());
-        }
-        
-        if (productUpdateDTO.getAvailableColors() != null) {
-            product.setAvailableColors(productUpdateDTO.getAvailableColors());
-        }
-        
         if (productUpdateDTO.getCategoryId() != null) {
             Category category = categoryRepository.findById(productUpdateDTO.getCategoryId())
                     .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + productUpdateDTO.getCategoryId()));
             product.setCategory(category);
         }
         
-        if (productUpdateDTO.getMaterial() != null) {
-            product.setMaterial(productUpdateDTO.getMaterial());
-        }
-        
-        if (productUpdateDTO.getCareInstructions() != null) {
-            product.setCareInstructions(productUpdateDTO.getCareInstructions());
-        }
-        
         if (productUpdateDTO.getActive() != null) {
             product.setActive(productUpdateDTO.getActive());
-        }
-        
-        if (productUpdateDTO.getFeatured() != null) {
-            product.setFeatured(productUpdateDTO.getFeatured());
-        }
-        
-        if (productUpdateDTO.getDiscountPercent() != null) {
-            product.setDiscountPercent(productUpdateDTO.getDiscountPercent());
         }
         
         Product savedProduct = productRepository.save(product);

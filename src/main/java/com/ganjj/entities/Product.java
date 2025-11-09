@@ -35,30 +35,12 @@ public class Product {
     @JoinColumn(name = "brand_id")
     private Brand brand;
 
-    @ElementCollection
-    @CollectionTable(name = "tb_product_sizes", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "size")
-    private List<String> availableSizes = new ArrayList<>();
-
-    @ElementCollection
-    @CollectionTable(name = "tb_product_colors", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "color")
-    private List<String> availableColors = new ArrayList<>();
-
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
 
-    private String material;
-
-    private String careInstructions;
-
     @Column(nullable = false)
     private Boolean active = true;
-
-    private Boolean featured = false;
-
-    private BigDecimal discountPercent = BigDecimal.ZERO;
     
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -80,14 +62,5 @@ public class Product {
     @PreUpdate
     public void preUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-    
-    public BigDecimal getCurrentPrice() {
-        if (discountPercent == null || discountPercent.compareTo(BigDecimal.ZERO) <= 0) {
-            return price;
-        }
-        
-        BigDecimal discountAmount = price.multiply(discountPercent).divide(new BigDecimal(100));
-        return price.subtract(discountAmount);
     }
 }

@@ -83,7 +83,6 @@ public class OrderService {
             orderItem.setSize(bagItem.getSize());
             orderItem.setQuantity(bagItem.getQuantity());
             orderItem.setUnitPrice(bagItem.getPrice());
-            orderItem.setDiscountPercent(product.getDiscountPercent());
             orderItem.calculateSubtotal();
 
             order.addItem(orderItem);

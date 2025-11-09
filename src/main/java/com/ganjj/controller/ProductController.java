@@ -7,15 +7,12 @@ import com.ganjj.service.ProductService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 
@@ -26,6 +23,7 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ProductResponseDTO> createProduct(@Valid @RequestBody ProductCreateDTO productCreateDTO) {
         ProductResponseDTO createdProduct = productService.createProduct(productCreateDTO);
@@ -36,54 +34,12 @@ public class ProductController {
         return ResponseEntity.created(uri).body(createdProduct);
     }
     
-    @GetMapping("/admin/all")
-    public ResponseEntity<Page<ProductResponseDTO>> getAllProducts(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(productService.getAllProducts(pageable));
-    }
-    
     @GetMapping
-    public ResponseEntity<Page<ProductResponseDTO>> getActiveProducts(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(productService.getActiveProducts(pageable));
+    public ResponseEntity<List<ProductResponseDTO>> getAllProducts() {
+        return ResponseEntity.ok(productService.getAllProductsList());
     }
     
-    @GetMapping("/{id}")
-    public ResponseEntity<ProductResponseDTO> getProductById(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.getProductById(id));
-    }
-    
-    @GetMapping("/featured")
-    public ResponseEntity<List<ProductResponseDTO>> getFeaturedProducts() {
-        return ResponseEntity.ok(productService.getFeaturedProducts());
-    }
-    
-    @GetMapping("/search")
-    public ResponseEntity<Page<ProductResponseDTO>> searchProducts(
-            @RequestParam(required = false) BigDecimal minPrice,
-            @RequestParam(required = false) BigDecimal maxPrice,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long brandId,
-            @RequestParam(required = false) String search,
-            @PageableDefault(size = 20) Pageable pageable) {
-        
-        return ResponseEntity.ok(productService.searchProducts(minPrice, maxPrice, categoryId, brandId, search, pageable));
-    }
-    
-    @GetMapping("/category/{categoryId}")
-    public ResponseEntity<Page<ProductResponseDTO>> getProductsByCategory(
-            @PathVariable Long categoryId,
-            @PageableDefault(size = 20) Pageable pageable) {
-        
-        return ResponseEntity.ok(productService.getProductsByCategory(categoryId, pageable));
-    }
-    
-    @GetMapping("/brand/{brandId}")
-    public ResponseEntity<Page<ProductResponseDTO>> getProductsByBrand(
-            @PathVariable Long brandId,
-            @PageableDefault(size = 20) Pageable pageable) {
-        
-        return ResponseEntity.ok(productService.getProductsByBrand(brandId, pageable));
-    }
-    
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> updateProduct(
             @PathVariable Long id,
@@ -92,6 +48,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateProduct(id, productUpdateDTO));
     }
     
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);

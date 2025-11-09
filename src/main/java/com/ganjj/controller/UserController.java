@@ -6,7 +6,6 @@ import com.ganjj.dto.UserRoleUpdateDTO;
 import com.ganjj.dto.UserUpdateDTO;
 import com.ganjj.security.UserDetailsImpl;
 import com.ganjj.service.UserService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;

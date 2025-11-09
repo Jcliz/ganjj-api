@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Data
 public class ProductCreateDTO {
@@ -30,17 +29,5 @@ public class ProductCreateDTO {
     @NotNull(message = "O ID da marca não pode ser nulo.")
     private Long brandId;
     
-    private List<String> availableSizes;
-    
-    private List<String> availableColors;
-    
     private Long categoryId;
-    
-    private String material;
-    
-    private String careInstructions;
-    
-    private Boolean featured;
-    
-    private BigDecimal discountPercent;
 }

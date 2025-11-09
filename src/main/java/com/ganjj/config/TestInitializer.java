@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 
 @Configuration
 @Profile("test")
@@ -180,11 +179,6 @@ public class TestInitializer {
                 tenis.setBrand(nike);
                 tenis.setCategory(calcados);
                 tenis.setActive(true);
-                tenis.setFeatured(true);
-                tenis.setAvailableSizes(Arrays.asList("38", "39", "40", "41", "42"));
-                tenis.setAvailableColors(Arrays.asList("Preto", "Branco", "Azul"));
-                tenis.setMaterial("Couro sintético");
-                tenis.setDiscountPercent(new BigDecimal("10"));
                 productRepository.save(tenis);
 
                 camiseta = new Product();
@@ -195,10 +189,6 @@ public class TestInitializer {
                 camiseta.setBrand(adidas);
                 camiseta.setCategory(roupas);
                 camiseta.setActive(true);
-                camiseta.setFeatured(false);
-                camiseta.setAvailableSizes(Arrays.asList("P", "M", "G", "GG"));
-                camiseta.setAvailableColors(Arrays.asList("Preto", "Branco"));
-                camiseta.setMaterial("Poliéster");
                 productRepository.save(camiseta);
 
             } else {
@@ -219,7 +209,7 @@ public class TestInitializer {
                 item1.setProductName(tenis.getName());
                 item1.setSize("40");
                 item1.setQuantity(1);
-                item1.setPrice(tenis.getCurrentPrice());
+                item1.setPrice(tenis.getPrice());
                 shoppingBag.addItem(item1);
 
                 if (camiseta != null) {
@@ -259,7 +249,6 @@ public class TestInitializer {
                 orderItem.setColor("Preto");
                 orderItem.setQuantity(1);
                 orderItem.setUnitPrice(tenis.getPrice());
-                orderItem.setDiscountPercent(tenis.getDiscountPercent());
                 
                 order.addItem(orderItem);
                 order.recalculateTotalAmount();
