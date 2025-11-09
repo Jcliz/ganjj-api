@@ -52,7 +52,6 @@ public class ProductReviewService {
         review.setProduct(product);
         review.setRating(createDTO.getRating());
         review.setComment(createDTO.getComment());
-        review.setImageUrls(createDTO.getImageUrls() != null ? createDTO.getImageUrls() : new java.util.ArrayList<>());
 
         if (createDTO.getOrderId() != null) {
             Order order = orderRepository.findById(createDTO.getOrderId())
@@ -113,10 +112,6 @@ public class ProductReviewService {
 
         if (updateDTO.getComment() != null) {
             review.setComment(updateDTO.getComment());
-        }
-
-        if (updateDTO.getImageUrls() != null) {
-            review.setImageUrls(updateDTO.getImageUrls());
         }
 
         if (updateDTO.getActive() != null) {

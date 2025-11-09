@@ -5,8 +5,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 public class ProductReviewUpdateDTO {
 
@@ -16,8 +14,6 @@ public class ProductReviewUpdateDTO {
 
     @Size(max = 1000, message = "O comentário não pode ter mais de 1000 caracteres.")
     private String comment;
-
-    private List<String> imageUrls;
 
     private Boolean active;
 }

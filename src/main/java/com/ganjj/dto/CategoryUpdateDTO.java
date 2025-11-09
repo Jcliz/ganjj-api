@@ -9,8 +9,6 @@ public class CategoryUpdateDTO {
     
     private String description;
     
-    private String imageUrl;
-    
     private Long parentId;
     
     private Boolean active;

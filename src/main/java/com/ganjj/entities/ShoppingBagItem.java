@@ -23,9 +23,6 @@ public class ShoppingBagItem {
     private String productName;
 
     @Column(nullable = false)
-    private String productImage;
-
-    @Column(nullable = false)
     private String size;
 
     @Column(nullable = false)

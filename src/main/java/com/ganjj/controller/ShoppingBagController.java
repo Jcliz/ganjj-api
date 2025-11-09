@@ -1,12 +1,14 @@
 package com.ganjj.controller;
 
 import com.ganjj.dto.*;
+import com.ganjj.security.UserDetailsImpl;
 import com.ganjj.service.ShoppingBagService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -22,7 +24,19 @@ public class ShoppingBagController {
 
     @PostMapping
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<ShoppingBagResponseDTO> createShoppingBag(@Valid @RequestBody ShoppingBagCreateDTO createDTO) {
+    public ResponseEntity<ShoppingBagResponseDTO> createShoppingBag(
+            @Valid @RequestBody ShoppingBagCreateDTO createDTO,
+            Authentication authentication) {
+        
+        // Verifica se o usuário está criando shopping bag para si mesmo ou se é admin
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin && !createDTO.getUserId().equals(userDetails.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        
         ShoppingBagResponseDTO response = shoppingBagService.createShoppingBag(createDTO);
         
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
@@ -33,21 +47,49 @@ public class ShoppingBagController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<ShoppingBagResponseDTO> getShoppingBag(@PathVariable Long id) {
+    public ResponseEntity<ShoppingBagResponseDTO> getShoppingBag(@PathVariable Long id, Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
         ShoppingBagResponseDTO response = shoppingBagService.getShoppingBag(id);
+        
+        if (!isAdmin && !response.getUserId().equals(userDetails.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<List<ShoppingBagSummaryDTO>> getUserShoppingBags(@PathVariable Long userId) {
+    public ResponseEntity<List<ShoppingBagSummaryDTO>> getUserShoppingBags(@PathVariable Long userId, Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin && !userId.equals(userDetails.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        
         List<ShoppingBagSummaryDTO> bags = shoppingBagService.getUserShoppingBags(userId);
         return ResponseEntity.ok(bags);
     }
 
     @GetMapping("/user/{userId}/active")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<ShoppingBagResponseDTO> getActiveShoppingBag(@PathVariable Long userId) {
+    public ResponseEntity<ShoppingBagResponseDTO> getActiveShoppingBag(@PathVariable Long userId, Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin && !userId.equals(userDetails.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        
         ShoppingBagResponseDTO response = shoppingBagService.getActiveShoppingBag(userId);
         return ResponseEntity.ok(response);
     }
@@ -56,7 +98,20 @@ public class ShoppingBagController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ShoppingBagResponseDTO> addItemToShoppingBag(
             @PathVariable Long id,
-            @Valid @RequestBody ShoppingBagItemDTO itemDTO) {
+            @Valid @RequestBody ShoppingBagItemDTO itemDTO,
+            Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin) {
+            ShoppingBagResponseDTO shoppingBag = shoppingBagService.getShoppingBag(id);
+            if (!shoppingBag.getUserId().equals(userDetails.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+        
         ShoppingBagResponseDTO response = shoppingBagService.addItemToShoppingBag(id, itemDTO);
         return ResponseEntity.ok(response);
     }
@@ -66,7 +121,20 @@ public class ShoppingBagController {
     public ResponseEntity<ShoppingBagResponseDTO> updateItemQuantity(
             @PathVariable Long bagId,
             @PathVariable Long itemId,
-            @RequestParam Integer quantity) {
+            @RequestParam Integer quantity,
+            Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin) {
+            ShoppingBagResponseDTO shoppingBag = shoppingBagService.getShoppingBag(bagId);
+            if (!shoppingBag.getUserId().equals(userDetails.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+        
         ShoppingBagResponseDTO response = shoppingBagService.updateItemQuantity(bagId, itemId, quantity);
         return ResponseEntity.ok(response);
     }
@@ -75,7 +143,20 @@ public class ShoppingBagController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ShoppingBagResponseDTO> removeItem(
             @PathVariable Long bagId,
-            @PathVariable Long itemId) {
+            @PathVariable Long itemId,
+            Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin) {
+            ShoppingBagResponseDTO shoppingBag = shoppingBagService.getShoppingBag(bagId);
+            if (!shoppingBag.getUserId().equals(userDetails.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+        
         ShoppingBagResponseDTO response = shoppingBagService.removeItem(bagId, itemId);
         return ResponseEntity.ok(response);
     }
@@ -84,21 +165,58 @@ public class ShoppingBagController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ShoppingBagResponseDTO> updateShoppingBagStatus(
             @PathVariable Long id,
-            @Valid @RequestBody ShoppingBagStatusDTO statusDTO) {
+            @Valid @RequestBody ShoppingBagStatusDTO statusDTO,
+            Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin) {
+            ShoppingBagResponseDTO shoppingBag = shoppingBagService.getShoppingBag(id);
+            if (!shoppingBag.getUserId().equals(userDetails.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+        
         ShoppingBagResponseDTO response = shoppingBagService.updateShoppingBagStatus(id, statusDTO);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteShoppingBag(@PathVariable Long id) {
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteShoppingBag(@PathVariable Long id, Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin) {
+            ShoppingBagResponseDTO shoppingBag = shoppingBagService.getShoppingBag(id);
+            if (!shoppingBag.getUserId().equals(userDetails.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+        
         shoppingBagService.deleteShoppingBag(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}/clear")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<ShoppingBagResponseDTO> clearShoppingBag(@PathVariable Long id) {
+    public ResponseEntity<ShoppingBagResponseDTO> clearShoppingBag(@PathVariable Long id, Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin) {
+            ShoppingBagResponseDTO shoppingBag = shoppingBagService.getShoppingBag(id);
+            if (!shoppingBag.getUserId().equals(userDetails.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+        
         ShoppingBagResponseDTO response = shoppingBagService.clearShoppingBag(id);
         return ResponseEntity.ok(response);
     }

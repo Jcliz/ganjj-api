@@ -36,11 +36,6 @@ public class Product {
     private Brand brand;
 
     @ElementCollection
-    @CollectionTable(name = "tb_product_images", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "image_url")
-    private List<String> imageUrls = new ArrayList<>();
-
-    @ElementCollection
     @CollectionTable(name = "tb_product_sizes", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "size")
     private List<String> availableSizes = new ArrayList<>();

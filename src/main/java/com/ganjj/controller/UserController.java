@@ -2,6 +2,7 @@ package com.ganjj.controller;
 
 import com.ganjj.dto.UserCreateDTO;
 import com.ganjj.dto.UserResponseDTO;
+import com.ganjj.dto.UserRoleUpdateDTO;
 import com.ganjj.dto.UserUpdateDTO;
 import com.ganjj.security.UserDetailsImpl;
 import com.ganjj.service.UserService;
@@ -19,7 +20,6 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -86,7 +86,6 @@ public class UserController {
             @Valid @RequestBody UserUpdateDTO userUpdateDTO,
             Authentication authentication) {
         
-        // Verifica se o usuário está tentando editar a si mesmo ou se é admin
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
@@ -103,19 +102,14 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponseDTO> updateUserRole(
             @PathVariable Long id, 
-            @RequestBody Map<String, String> roleMap) {
-        String role = roleMap.get("role");
-        if (role == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(userService.updateUserRole(id, role));
+            @Valid @RequestBody UserRoleUpdateDTO roleUpdateDTO) {
+        return ResponseEntity.ok(userService.updateUserRole(id, roleUpdateDTO.getRole()));
     }
     
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id, Authentication authentication) {
         
-        // Verifica se o usuário está tentando deletar a si mesmo ou se é admin
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));

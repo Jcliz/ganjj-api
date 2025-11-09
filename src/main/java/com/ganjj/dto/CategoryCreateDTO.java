@@ -11,7 +11,5 @@ public class CategoryCreateDTO {
     
     private String description;
     
-    private String imageUrl;
-    
     private Long parentId;
 }

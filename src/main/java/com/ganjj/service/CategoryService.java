@@ -28,7 +28,6 @@ public class CategoryService {
         Category category = new Category();
         category.setName(categoryCreateDTO.getName());
         category.setDescription(categoryCreateDTO.getDescription());
-        category.setImageUrl(categoryCreateDTO.getImageUrl());
         
         if (categoryCreateDTO.getParentId() != null) {
             Category parent = categoryRepository.findById(categoryCreateDTO.getParentId())
@@ -79,10 +78,6 @@ public class CategoryService {
         
         if (categoryUpdateDTO.getDescription() != null) {
             category.setDescription(categoryUpdateDTO.getDescription());
-        }
-        
-        if (categoryUpdateDTO.getImageUrl() != null) {
-            category.setImageUrl(categoryUpdateDTO.getImageUrl());
         }
         
         if (categoryUpdateDTO.getActive() != null) {

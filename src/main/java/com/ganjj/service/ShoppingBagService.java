@@ -98,7 +98,6 @@ public class ShoppingBagService {
             bagItem = new ShoppingBagItem();
             bagItem.setProductId(itemDTO.getProductId());
             bagItem.setProductName(itemDTO.getProductName());
-            bagItem.setProductImage(itemDTO.getProductImage());
             bagItem.setSize(itemDTO.getSize());
             bagItem.setPrice(itemDTO.getPrice());
             bagItem.setQuantity(itemDTO.getQuantity());

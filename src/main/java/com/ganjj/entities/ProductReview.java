@@ -25,11 +25,6 @@ public class ProductReview {
     @Column(nullable = false)
     private Boolean verifiedPurchase = false;
 
-    @ElementCollection
-    @CollectionTable(name = "tb_review_images", joinColumns = @JoinColumn(name = "review_id"))
-    @Column(name = "image_url")
-    private java.util.List<String> imageUrls = new java.util.ArrayList<>();
-
     @Column(nullable = false)
     private Boolean active = true;
 

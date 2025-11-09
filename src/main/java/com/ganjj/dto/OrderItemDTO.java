@@ -13,7 +13,6 @@ public class OrderItemDTO {
     private Long id;
     private Long productId;
     private String productName;
-    private String productImage;
     private String size;
     private String color;
     private Integer quantity;
@@ -25,7 +24,6 @@ public class OrderItemDTO {
         this.id = item.getId();
         this.productId = item.getProduct().getId();
         this.productName = item.getProductName();
-        this.productImage = item.getProductImage();
         this.size = item.getSize();
         this.color = item.getColor();
         this.quantity = item.getQuantity();

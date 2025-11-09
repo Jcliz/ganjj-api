@@ -217,7 +217,6 @@ public class TestInitializer {
                 ShoppingBagItem item1 = new ShoppingBagItem();
                 item1.setProductId(tenis.getId().toString());
                 item1.setProductName(tenis.getName());
-                item1.setProductImage("nike-air-max.jpg");
                 item1.setSize("40");
                 item1.setQuantity(1);
                 item1.setPrice(tenis.getCurrentPrice());
@@ -227,7 +226,6 @@ public class TestInitializer {
                     ShoppingBagItem item2 = new ShoppingBagItem();
                     item2.setProductId(camiseta.getId().toString());
                     item2.setProductName(camiseta.getName());
-                    item2.setProductImage("adidas-performance.jpg");
                     item2.setSize("M");
                     item2.setQuantity(2);
                     item2.setPrice(camiseta.getPrice());
@@ -257,7 +255,6 @@ public class TestInitializer {
                 OrderItem orderItem = new OrderItem();
                 orderItem.setProduct(tenis);
                 orderItem.setProductName(tenis.getName());
-                orderItem.setProductImage("nike-air-max.jpg");
                 orderItem.setSize("40");
                 orderItem.setColor("Preto");
                 orderItem.setQuantity(1);

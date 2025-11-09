@@ -46,10 +46,6 @@ public class ProductService {
             product.setBrand(brand);
         }
         
-        if (productCreateDTO.getImageUrls() != null) {
-            product.setImageUrls(productCreateDTO.getImageUrls());
-        }
-        
         if (productCreateDTO.getAvailableSizes() != null) {
             product.setAvailableSizes(productCreateDTO.getAvailableSizes());
         }
@@ -161,10 +157,6 @@ public class ProductService {
             Brand brand = brandRepository.findById(productUpdateDTO.getBrandId())
                     .orElseThrow(() -> new EntityNotFoundException("Marca não encontrada com o ID: " + productUpdateDTO.getBrandId()));
             product.setBrand(brand);
-        }
-        
-        if (productUpdateDTO.getImageUrls() != null) {
-            product.setImageUrls(productUpdateDTO.getImageUrls());
         }
         
         if (productUpdateDTO.getAvailableSizes() != null) {

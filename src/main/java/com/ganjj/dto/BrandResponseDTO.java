@@ -11,7 +11,6 @@ public class BrandResponseDTO {
     private Long id;
     private String name;
     private String description;
-    private String logoUrl;
     private String website;
     private String country;
     private Boolean active;
@@ -23,7 +22,6 @@ public class BrandResponseDTO {
         this.id = brand.getId();
         this.name = brand.getName();
         this.description = brand.getDescription();
-        this.logoUrl = brand.getLogoUrl();
         this.website = brand.getWebsite();
         this.country = brand.getCountry();
         this.active = brand.getActive();

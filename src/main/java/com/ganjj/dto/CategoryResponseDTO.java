@@ -13,7 +13,6 @@ public class CategoryResponseDTO {
     private Long id;
     private String name;
     private String description;
-    private String imageUrl;
     private List<CategoryResponseDTO> subcategories;
     private Boolean active;
     private LocalDateTime createdAt;
@@ -23,7 +22,6 @@ public class CategoryResponseDTO {
         this.id = category.getId();
         this.name = category.getName();
         this.description = category.getDescription();
-        this.imageUrl = category.getImageUrl();
         this.active = category.getActive();
         this.createdAt = category.getCreatedAt();
         this.updatedAt = category.getUpdatedAt();

@@ -23,8 +23,6 @@ public class Brand {
     
     private String description;
     
-    private String logoUrl;
-    
     private String website;
     
     private String country;

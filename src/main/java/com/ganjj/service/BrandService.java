@@ -28,7 +28,6 @@ public class BrandService {
         Brand brand = new Brand();
         brand.setName(brandCreateDTO.getName());
         brand.setDescription(brandCreateDTO.getDescription());
-        brand.setLogoUrl(brandCreateDTO.getLogoUrl());
         brand.setWebsite(brandCreateDTO.getWebsite());
         brand.setCountry(brandCreateDTO.getCountry());
         
@@ -75,10 +74,6 @@ public class BrandService {
         
         if (brandUpdateDTO.getDescription() != null) {
             brand.setDescription(brandUpdateDTO.getDescription());
-        }
-        
-        if (brandUpdateDTO.getLogoUrl() != null) {
-            brand.setLogoUrl(brandUpdateDTO.getLogoUrl());
         }
         
         if (brandUpdateDTO.getWebsite() != null) {

@@ -3,8 +3,6 @@ package com.ganjj.dto;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 public class ProductReviewCreateDTO {
 
@@ -23,6 +21,4 @@ public class ProductReviewCreateDTO {
 
     @Size(max = 1000, message = "O comentário não pode ter mais de 1000 caracteres.")
     private String comment;
-
-    private List<String> imageUrls;
 }

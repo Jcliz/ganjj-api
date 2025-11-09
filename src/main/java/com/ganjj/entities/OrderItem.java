@@ -20,9 +20,6 @@ public class OrderItem {
     @Column(nullable = false)
     private String productName;
 
-    @Column(nullable = false)
-    private String productImage;
-
     private String size;
     private String color;
 

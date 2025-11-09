@@ -30,8 +30,6 @@ public class ProductCreateDTO {
     @NotNull(message = "O ID da marca não pode ser nulo.")
     private Long brandId;
     
-    private List<String> imageUrls;
-    
     private List<String> availableSizes;
     
     private List<String> availableColors;

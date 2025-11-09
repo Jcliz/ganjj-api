@@ -8,14 +8,12 @@ import java.math.BigDecimal;
 
 @Data
 public class ShoppingBagItemDTO {
+    
     @NotBlank(message = "O ID do produto não pode ser vazio.")
     private String productId;
 
     @NotBlank(message = "O nome do produto não pode ser vazio.")
     private String productName;
-
-    @NotBlank(message = "A URL da imagem do produto não pode ser vazia.")
-    private String productImage;
 
     @NotBlank(message = "O tamanho não pode ser vazio.")
     private String size;

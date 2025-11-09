@@ -37,7 +37,6 @@ public class ShoppingBagResponseDTO {
         private Long id;
         private String productId;
         private String productName;
-        private String productImage;
         private String size;
         private BigDecimal price;
         private Integer quantity;
@@ -47,7 +46,6 @@ public class ShoppingBagResponseDTO {
             this.id = item.getId();
             this.productId = item.getProductId();
             this.productName = item.getProductName();
-            this.productImage = item.getProductImage();
             this.size = item.getSize();
             this.price = item.getPrice();
             this.quantity = item.getQuantity();

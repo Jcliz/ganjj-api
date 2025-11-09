@@ -19,7 +19,6 @@ public class ProductResponseDTO {
     private BigDecimal currentPrice;
     private Integer stockQuantity;
     private BrandDTO brand;
-    private List<String> imageUrls;
     private List<String> availableSizes;
     private List<String> availableColors;
     private CategoryDTO category;
@@ -41,7 +40,6 @@ public class ProductResponseDTO {
         if (product.getBrand() != null) {
             this.brand = new BrandDTO(product.getBrand());
         }
-        this.imageUrls = product.getImageUrls();
         this.availableSizes = product.getAvailableSizes();
         this.availableColors = product.getAvailableColors();
         
@@ -73,12 +71,10 @@ public class ProductResponseDTO {
     public static class BrandDTO {
         private Long id;
         private String name;
-        private String logoUrl;
         
         public BrandDTO(Brand brand) {
             this.id = brand.getId();
             this.name = brand.getName();
-            this.logoUrl = brand.getLogoUrl();
         }
     }
 }

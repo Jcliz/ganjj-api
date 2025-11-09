@@ -21,8 +21,6 @@ public class ProductUpdateDTO {
     
     private Long brandId;
     
-    private List<String> imageUrls;
-    
     private List<String> availableSizes;
     
     private List<String> availableColors;

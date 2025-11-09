@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -20,7 +19,6 @@ public class ProductReviewResponseDTO {
     private Integer rating;
     private String comment;
     private Boolean verifiedPurchase;
-    private List<String> imageUrls;
     private Boolean active;
     private Integer helpfulCount;
     private LocalDateTime createdAt;
@@ -36,7 +34,6 @@ public class ProductReviewResponseDTO {
         this.rating = review.getRating();
         this.comment = review.getComment();
         this.verifiedPurchase = review.getVerifiedPurchase();
-        this.imageUrls = review.getImageUrls();
         this.active = review.getActive();
         this.helpfulCount = review.getHelpfulCount();
         this.createdAt = review.getCreatedAt();
