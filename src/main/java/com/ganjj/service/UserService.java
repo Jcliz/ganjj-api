@@ -69,6 +69,7 @@ public class UserService {
     
     @Transactional(readOnly = true)
     public UserResponseDTO getUserById(Long id) {
+        // Força a leitura do banco de dados, não do cache
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
                 
@@ -80,6 +81,7 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
         
+        // Agora o email pode ser alterado pois o JWT usa ID
         if (userUpdateDTO.getEmail() != null && !userUpdateDTO.getEmail().equals(user.getEmail())) {
             if (userRepository.findByEmail(userUpdateDTO.getEmail()).isPresent()) {
                 throw new IllegalArgumentException("E-mail já cadastrado para outro usuário.");
@@ -87,11 +89,11 @@ public class UserService {
             user.setEmail(userUpdateDTO.getEmail());
         }
         
-        if (userUpdateDTO.getName() != null) {
+        if (userUpdateDTO.getName() != null && !userUpdateDTO.getName().isEmpty()) {
             user.setName(userUpdateDTO.getName());
         }
         
-        if (userUpdateDTO.getPassword() != null) {
+        if (userUpdateDTO.getPassword() != null && !userUpdateDTO.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(userUpdateDTO.getPassword()));
         }
         
@@ -99,7 +101,7 @@ public class UserService {
             user.setPhone(userUpdateDTO.getPhone());
         }
         
-        User savedUser = userRepository.save(user);
+        User savedUser = userRepository.saveAndFlush(user);
         
         return new UserResponseDTO(savedUser);
     }
@@ -122,10 +124,11 @@ public class UserService {
     
     @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new EntityNotFoundException("Usuário não encontrado com o ID: " + id);
-        }
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
         
-        userRepository.deleteById(id);
+        // O cascade ALL vai deletar automaticamente orders, addresses, reviews e shopping bags
+        userRepository.delete(user);
+        userRepository.flush();
     }
 }

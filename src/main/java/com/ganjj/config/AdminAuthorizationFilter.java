@@ -1,15 +1,13 @@
 package com.ganjj.config;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-@Component
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 public class AdminAuthorizationFilter implements Filter {
     private static final List<String> PROTECTED_ADMIN_PATHS = Arrays.asList(
             "/api/users/admin",

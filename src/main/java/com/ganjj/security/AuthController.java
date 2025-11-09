@@ -42,7 +42,7 @@ public class AuthController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         String jwt = jwtUtils.generateJwtToken(authentication);
-        String refreshToken = jwtUtils.generateRefreshTokenFromUsername(userDetails.getUsername());
+        String refreshToken = jwtUtils.generateRefreshTokenFromUserId(userDetails.getId());
 
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -66,8 +66,8 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Error: Invalid refresh token!");
         }
         
-        String username = jwtUtils.getUsernameFromJwtToken(requestRefreshToken);
-        String newToken = jwtUtils.generateTokenFromUsername(username);
+        Long userId = jwtUtils.getUserIdFromJwtToken(requestRefreshToken);
+        String newToken = jwtUtils.generateTokenFromUserId(userId);
         
         return ResponseEntity.ok(new TokenRefreshResponseDTO(newToken, requestRefreshToken, "Bearer"));
     }

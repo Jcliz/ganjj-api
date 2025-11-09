@@ -41,25 +41,25 @@ public class JwtUtils {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
         return Jwts.builder()
-                .setSubject((userPrincipal.getUsername()))
+                .setSubject(String.valueOf(userPrincipal.getId()))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + getJwtExpirationMs()))
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }
     
-    public String generateTokenFromUsername(String username) {
+    public String generateTokenFromUserId(Long userId) {
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(String.valueOf(userId))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + getJwtExpirationMs()))
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String generateRefreshTokenFromUsername(String username) {
+    public String generateRefreshTokenFromUserId(Long userId) {
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(String.valueOf(userId))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + getRefreshTokenExpirationMs()))
                 .signWith(key(), SignatureAlgorithm.HS256)
@@ -86,9 +86,10 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(getJwtSecret()));
     }
 
-    public String getUsernameFromJwtToken(String token) {
-        return Jwts.parserBuilder().setSigningKey(key()).build()
+    public Long getUserIdFromJwtToken(String token) {
+        String subject = Jwts.parserBuilder().setSigningKey(key()).build()
                 .parseClaimsJws(token).getBody().getSubject();
+        return Long.parseLong(subject);
     }
 
     public String getJwtFromCookies(HttpServletRequest request) {
