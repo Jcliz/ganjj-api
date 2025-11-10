@@ -14,7 +14,8 @@ public class AdminAuthorizationFilter implements Filter {
             "/api/users/",
             "/api/products/admin",
             "/api/products/",
-            "/api/categories/"
+            "/api/categories/",
+            "/api/brands/admin"
     );
 
     @Override
@@ -58,6 +59,10 @@ public class AdminAuthorizationFilter implements Filter {
         
         if (path.startsWith("/api/categories/") && method.equals("GET") && 
             !path.startsWith("/api/categories/admin/")) {
+            return false; 
+        }
+        
+        if (path.equals("/api/brands") && method.equals("GET")) {
             return false; 
         }
         

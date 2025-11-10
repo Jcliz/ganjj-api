@@ -1,5 +1,6 @@
 package com.ganjj.security;
 
+import com.ganjj.config.AdminAuthorizationFilter;
 import com.ganjj.security.jwt.JwtAuthenticationEntryPoint;
 import com.ganjj.security.jwt.JwtAuthenticationFilter;
 import com.ganjj.config.CorsProperties;
@@ -39,6 +40,11 @@ public class SecurityConfig {
     @Bean
     public JwtAuthenticationFilter authenticationJwtTokenFilter() {
         return new JwtAuthenticationFilter();
+    }
+
+    @Bean
+    public AdminAuthorizationFilter adminAuthorizationFilter() {
+        return new AdminAuthorizationFilter();
     }
 
     @SuppressWarnings("deprecation")
@@ -85,7 +91,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
-                .requestMatchers("/api/brands/**").permitAll()
+                .requestMatchers("/api/brands").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/users/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/users/**").authenticated()
@@ -99,6 +105,7 @@ public class SecurityConfig {
         
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(adminAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

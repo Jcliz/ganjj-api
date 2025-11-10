@@ -29,12 +29,6 @@ public class CategoryService {
         category.setName(categoryCreateDTO.getName());
         category.setDescription(categoryCreateDTO.getDescription());
         
-        if (categoryCreateDTO.getParentId() != null) {
-            Category parent = categoryRepository.findById(categoryCreateDTO.getParentId())
-                    .orElseThrow(() -> new EntityNotFoundException("Categoria pai não encontrada com o ID: " + categoryCreateDTO.getParentId()));
-            category.setParent(parent);
-        }
-        
         Category savedCategory = categoryRepository.save(category);
         
         return new CategoryResponseDTO(savedCategory);
@@ -42,7 +36,7 @@ public class CategoryService {
     
     @Transactional(readOnly = true)
     public List<CategoryResponseDTO> getAllCategories() {
-        List<Category> categories = categoryRepository.findByParentIsNull();
+        List<Category> categories = categoryRepository.findAll();
         return categories.stream()
                 .map(CategoryResponseDTO::new)
                 .collect(Collectors.toList());
@@ -50,7 +44,7 @@ public class CategoryService {
     
     @Transactional(readOnly = true)
     public List<CategoryResponseDTO> getActiveCategories() {
-        List<Category> categories = categoryRepository.findByParentIsNullAndActive(true);
+        List<Category> categories = categoryRepository.findByActive(true);
         return categories.stream()
                 .map(CategoryResponseDTO::new)
                 .collect(Collectors.toList());
@@ -82,18 +76,6 @@ public class CategoryService {
         
         if (categoryUpdateDTO.getActive() != null) {
             category.setActive(categoryUpdateDTO.getActive());
-        }
-        
-        if (categoryUpdateDTO.getParentId() != null) {
-            if (categoryUpdateDTO.getParentId().equals(id)) {
-                throw new IllegalArgumentException("Uma categoria não pode ser pai dela mesma.");
-            }
-            
-            Category parent = categoryRepository.findById(categoryUpdateDTO.getParentId())
-                    .orElseThrow(() -> new EntityNotFoundException("Categoria pai não encontrada com o ID: " + categoryUpdateDTO.getParentId()));
-            category.setParent(parent);
-        } else if (categoryUpdateDTO.getParentId() == null && category.getParent() != null) {
-            category.setParent(null);
         }
         
         Category savedCategory = categoryRepository.save(category);

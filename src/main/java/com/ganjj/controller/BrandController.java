@@ -22,7 +22,7 @@ public class BrandController {
     @Autowired
     private BrandService brandService;
 
-    @PostMapping
+    @PostMapping("/admin")
     public ResponseEntity<BrandResponseDTO> createBrand(@Valid @RequestBody BrandCreateDTO brandCreateDTO) {
         BrandResponseDTO createdBrand = brandService.createBrand(brandCreateDTO);
         
@@ -32,22 +32,12 @@ public class BrandController {
         return ResponseEntity.created(uri).body(createdBrand);
     }
     
-    @GetMapping("/admin/all")
-    public ResponseEntity<List<BrandResponseDTO>> getAllBrands() {
-        return ResponseEntity.ok(brandService.getAllBrands());
-    }
-    
     @GetMapping
     public ResponseEntity<List<BrandResponseDTO>> getActiveBrands() {
         return ResponseEntity.ok(brandService.getActiveBrands());
     }
     
-    @GetMapping("/{id}")
-    public ResponseEntity<BrandResponseDTO> getBrandById(@PathVariable Long id) {
-        return ResponseEntity.ok(brandService.getBrandById(id));
-    }
-    
-    @PutMapping("/{id}")
+    @PutMapping("/admin/{id}")
     public ResponseEntity<BrandResponseDTO> updateBrand(
             @PathVariable Long id,
             @Valid @RequestBody BrandUpdateDTO brandUpdateDTO) {
@@ -55,7 +45,7 @@ public class BrandController {
         return ResponseEntity.ok(brandService.updateBrand(id, brandUpdateDTO));
     }
     
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/admin/{id}")
     public ResponseEntity<Void> deleteBrand(@PathVariable Long id) {
         brandService.deleteBrand(id);
         return ResponseEntity.noContent().build();

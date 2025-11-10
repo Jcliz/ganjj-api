@@ -9,7 +9,5 @@ public class CategoryUpdateDTO {
     
     private String description;
     
-    private Long parentId;
-    
     private Boolean active;
 }
