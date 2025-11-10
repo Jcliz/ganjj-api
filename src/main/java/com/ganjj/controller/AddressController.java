@@ -3,6 +3,7 @@ package com.ganjj.controller;
 import com.ganjj.dto.AddressCreateDTO;
 import com.ganjj.dto.AddressResponseDTO;
 import com.ganjj.dto.AddressUpdateDTO;
+import com.ganjj.security.UserDetailsImpl;
 import com.ganjj.service.AddressService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
@@ -10,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -26,6 +29,17 @@ public class AddressController {
     @PostMapping
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<AddressResponseDTO> createAddress(@Valid @RequestBody AddressCreateDTO createDTO) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        if (authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_USER"))) {
+            if (!userDetails.getId().equals(createDTO.getUserId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(null);
+            }
+        }
+        
         AddressResponseDTO createdAddress = addressService.createAddress(createDTO);
 
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
@@ -37,25 +51,23 @@ public class AddressController {
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<List<AddressResponseDTO>> getUserAddresses(@PathVariable Long userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        if (authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_USER"))) {
+            if (!userDetails.getId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+        
         return ResponseEntity.ok(addressService.getUserAddresses(userId));
     }
 
-    @GetMapping("/user/{userId}/active")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<List<AddressResponseDTO>> getActiveUserAddresses(@PathVariable Long userId) {
-        return ResponseEntity.ok(addressService.getActiveUserAddresses(userId));
-    }
-
-    @GetMapping("/user/{userId}/default")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<AddressResponseDTO> getDefaultAddress(@PathVariable Long userId) {
-        return ResponseEntity.ok(addressService.getDefaultAddress(userId));
-    }
-
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<AddressResponseDTO> getAddressById(@PathVariable Long id) {
-        return ResponseEntity.ok(addressService.getAddressById(id));
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<AddressResponseDTO>> getAllAddresses() {
+        return ResponseEntity.ok(addressService.getAllAddresses());
     }
 
     @PutMapping("/{id}")
@@ -63,18 +75,36 @@ public class AddressController {
     public ResponseEntity<AddressResponseDTO> updateAddress(
             @PathVariable Long id,
             @Valid @RequestBody AddressUpdateDTO updateDTO) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        if (authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_USER"))) {
+            try {
+                addressService.validateAddressOwnership(id, userDetails.getId());
+            } catch (SecurityException e) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+        
         return ResponseEntity.ok(addressService.updateAddress(id, updateDTO));
-    }
-
-    @PutMapping("/{id}/set-default")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<AddressResponseDTO> setAsDefault(@PathVariable Long id) {
-        return ResponseEntity.ok(addressService.setAsDefault(id));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteAddress(@PathVariable Long id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        if (authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_USER"))) {
+            try {
+                addressService.validateAddressOwnership(id, userDetails.getId());
+            } catch (SecurityException e) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+        
         addressService.deleteAddress(id);
         return ResponseEntity.noContent().build();
     }
@@ -87,5 +117,10 @@ public class AddressController {
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<String> handleEntityNotFoundException(EntityNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<String> handleSecurityException(SecurityException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
     }
 }

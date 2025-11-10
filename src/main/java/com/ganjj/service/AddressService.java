@@ -72,16 +72,6 @@ public class AddressService {
     }
 
     @Transactional(readOnly = true)
-    public List<AddressResponseDTO> getActiveUserAddresses(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new EntityNotFoundException("Usuário não encontrado com o ID: " + userId);
-        }
-        return addressRepository.findByUserIdAndActiveTrue(userId).stream()
-                .map(AddressResponseDTO::new)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
     public AddressResponseDTO getAddressById(Long id) {
         Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + id));
@@ -89,13 +79,19 @@ public class AddressService {
     }
 
     @Transactional(readOnly = true)
-    public AddressResponseDTO getDefaultAddress(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new EntityNotFoundException("Usuário não encontrado com o ID: " + userId);
+    public List<AddressResponseDTO> getAllAddresses() {
+        return addressRepository.findAll().stream()
+                .map(AddressResponseDTO::new)
+                .collect(Collectors.toList());
+    }
+
+    public void validateAddressOwnership(Long addressId, Long userId) {
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + addressId));
+        
+        if (!address.getUser().getId().equals(userId)) {
+            throw new SecurityException("Você não tem permissão para acessar este endereço.");
         }
-        Address address = addressRepository.findByUserIdAndIsDefaultTrue(userId)
-                .orElseThrow(() -> new EntityNotFoundException("Nenhum endereço padrão encontrado para o usuário."));
-        return new AddressResponseDTO(address);
     }
 
     @Transactional

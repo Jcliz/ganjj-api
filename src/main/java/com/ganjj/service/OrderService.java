@@ -38,12 +38,10 @@ public class OrderService {
 
     @Transactional
     public OrderResponseDTO createOrder(OrderCreateDTO createDTO) {
-        // Obtém o usuário autenticado
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         Long authenticatedUserId = userDetails.getId();
         
-        // Verifica se o usuário está tentando criar um pedido para outro usuário
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
         
