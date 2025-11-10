@@ -22,7 +22,12 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
-    @PostMapping
+    @GetMapping
+    public ResponseEntity<List<CategoryResponseDTO>> getActiveCategories() {
+        return ResponseEntity.ok(categoryService.getActiveCategories());
+    }
+
+    @PostMapping("/admin")
     public ResponseEntity<CategoryResponseDTO> createCategory(@Valid @RequestBody CategoryCreateDTO categoryCreateDTO) {
         CategoryResponseDTO createdCategory = categoryService.createCategory(categoryCreateDTO);
         
@@ -32,22 +37,7 @@ public class CategoryController {
         return ResponseEntity.created(uri).body(createdCategory);
     }
     
-    @GetMapping("/admin/all")
-    public ResponseEntity<List<CategoryResponseDTO>> getAllCategories() {
-        return ResponseEntity.ok(categoryService.getAllCategories());
-    }
-    
-    @GetMapping
-    public ResponseEntity<List<CategoryResponseDTO>> getActiveCategories() {
-        return ResponseEntity.ok(categoryService.getActiveCategories());
-    }
-    
-    @GetMapping("/{id}")
-    public ResponseEntity<CategoryResponseDTO> getCategoryById(@PathVariable Long id) {
-        return ResponseEntity.ok(categoryService.getCategoryById(id));
-    }
-    
-    @PutMapping("/{id}")
+    @PutMapping("/admin/{id}")
     public ResponseEntity<CategoryResponseDTO> updateCategory(
             @PathVariable Long id,
             @Valid @RequestBody CategoryUpdateDTO categoryUpdateDTO) {
@@ -55,7 +45,7 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.updateCategory(id, categoryUpdateDTO));
     }
     
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/admin/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();

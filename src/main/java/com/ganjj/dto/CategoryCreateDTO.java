@@ -10,6 +10,4 @@ public class CategoryCreateDTO {
     private String name;
     
     private String description;
-    
-    private Long parentId;
 }

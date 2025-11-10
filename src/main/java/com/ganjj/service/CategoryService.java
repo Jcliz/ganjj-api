@@ -110,10 +110,6 @@ public class CategoryService {
             throw new IllegalStateException("Não é possível excluir uma categoria que possui produtos.");
         }
         
-        if (!category.getSubcategories().isEmpty()) {
-            throw new IllegalStateException("Não é possível excluir uma categoria que possui subcategorias.");
-        }
-        
         categoryRepository.delete(category);
     }
 }

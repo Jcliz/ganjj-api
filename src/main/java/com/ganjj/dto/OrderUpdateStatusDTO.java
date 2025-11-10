@@ -8,5 +8,4 @@ public class OrderUpdateStatusDTO {
 
     private Order.OrderStatus orderStatus;
     private Order.PaymentStatus paymentStatus;
-    private String trackingCode;
 }

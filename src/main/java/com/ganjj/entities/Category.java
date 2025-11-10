@@ -32,13 +32,6 @@ public class Category {
     
     @OneToMany(mappedBy = "category")
     private List<Product> products = new ArrayList<>();
-    
-    @ManyToOne
-    @JoinColumn(name = "parent_id")
-    private Category parent;
-    
-    @OneToMany(mappedBy = "parent")
-    private List<Category> subcategories = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {

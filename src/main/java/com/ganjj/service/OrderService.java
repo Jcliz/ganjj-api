@@ -5,8 +5,12 @@ import com.ganjj.dto.OrderResponseDTO;
 import com.ganjj.dto.OrderUpdateStatusDTO;
 import com.ganjj.entities.*;
 import com.ganjj.repository.*;
+import com.ganjj.security.UserDetailsImpl;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +38,19 @@ public class OrderService {
 
     @Transactional
     public OrderResponseDTO createOrder(OrderCreateDTO createDTO) {
+        // Obtém o usuário autenticado
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Long authenticatedUserId = userDetails.getId();
+        
+        // Verifica se o usuário está tentando criar um pedido para outro usuário
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isAdmin && !authenticatedUserId.equals(createDTO.getUserId())) {
+            throw new AccessDeniedException("Você não tem permissão para criar pedidos para outros usuários.");
+        }
+        
         User user = userRepository.findById(createDTO.getUserId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + createDTO.getUserId()));
 
@@ -159,10 +176,6 @@ public class OrderService {
             if (updateDTO.getPaymentStatus() == Order.PaymentStatus.PAID) {
                 order.setPaymentDate(LocalDateTime.now());
             }
-        }
-
-        if (updateDTO.getTrackingCode() != null) {
-            order.setTrackingCode(updateDTO.getTrackingCode());
         }
 
         Order updatedOrder = orderRepository.save(order);

@@ -4,8 +4,6 @@ import com.ganjj.entities.Category;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Data
 public class CategoryResponseDTO {
@@ -13,7 +11,6 @@ public class CategoryResponseDTO {
     private Long id;
     private String name;
     private String description;
-    private List<CategoryResponseDTO> subcategories;
     private Boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -25,11 +22,5 @@ public class CategoryResponseDTO {
         this.active = category.getActive();
         this.createdAt = category.getCreatedAt();
         this.updatedAt = category.getUpdatedAt();
-        
-        if (category.getSubcategories() != null && !category.getSubcategories().isEmpty()) {
-            this.subcategories = category.getSubcategories().stream()
-                    .map(CategoryResponseDTO::new)
-                    .collect(Collectors.toList());
-        }
     }
 }

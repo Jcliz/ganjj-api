@@ -3,7 +3,6 @@ package com.ganjj.controller;
 import com.ganjj.dto.OrderCreateDTO;
 import com.ganjj.dto.OrderResponseDTO;
 import com.ganjj.dto.OrderUpdateStatusDTO;
-import com.ganjj.entities.Order;
 import com.ganjj.service.OrderService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
@@ -45,18 +44,6 @@ public class OrderController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<OrderResponseDTO> getOrderById(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.getOrderById(id));
-    }
-
-    @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<List<OrderResponseDTO>> getUserOrders(@PathVariable Long userId) {
-        return ResponseEntity.ok(orderService.getUserOrders(userId));
-    }
-
-    @GetMapping("/status/{status}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<OrderResponseDTO>> getOrdersByStatus(@PathVariable Order.OrderStatus status) {
-        return ResponseEntity.ok(orderService.getOrdersByStatus(status));
     }
 
     @PutMapping("/{id}/status")
