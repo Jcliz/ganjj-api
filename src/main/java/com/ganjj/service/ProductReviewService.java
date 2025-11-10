@@ -34,6 +34,10 @@ public class ProductReviewService {
 
     @Transactional
     public ProductReviewResponseDTO createReview(ProductReviewCreateDTO createDTO) {
+        if (createDTO.getRating() < 1 || createDTO.getRating() > 5) {
+            throw new IllegalArgumentException("A avaliação deve estar entre 1 e 5 estrelas.");
+        }
+
         User user = userRepository.findById(createDTO.getUserId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + createDTO.getUserId()));
 
@@ -107,6 +111,9 @@ public class ProductReviewService {
                 .orElseThrow(() -> new EntityNotFoundException("Avaliação não encontrada com o ID: " + id));
 
         if (updateDTO.getRating() != null) {
+            if (updateDTO.getRating() < 1 || updateDTO.getRating() > 5) {
+                throw new IllegalArgumentException("A avaliação deve estar entre 1 e 5 estrelas.");
+            }
             review.setRating(updateDTO.getRating());
         }
 

@@ -34,6 +34,14 @@ public class ProductService {
     
     @Transactional
     public ProductResponseDTO createProduct(ProductCreateDTO productCreateDTO) {
+        if (productCreateDTO.getPrice() != null && productCreateDTO.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("O preço do produto deve ser maior que zero.");
+        }
+
+        if (productCreateDTO.getStockQuantity() != null && productCreateDTO.getStockQuantity() < 0) {
+            throw new IllegalArgumentException("A quantidade em estoque não pode ser negativa.");
+        }
+
         Product product = new Product();
         product.setName(productCreateDTO.getName());
         product.setDescription(productCreateDTO.getDescription());
@@ -108,10 +116,16 @@ public class ProductService {
         }
         
         if (productUpdateDTO.getPrice() != null) {
+            if (productUpdateDTO.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("O preço do produto deve ser maior que zero.");
+            }
             product.setPrice(productUpdateDTO.getPrice());
         }
         
         if (productUpdateDTO.getStockQuantity() != null) {
+            if (productUpdateDTO.getStockQuantity() < 0) {
+                throw new IllegalArgumentException("A quantidade em estoque não pode ser negativa.");
+            }
             product.setStockQuantity(productUpdateDTO.getStockQuantity());
         }
         

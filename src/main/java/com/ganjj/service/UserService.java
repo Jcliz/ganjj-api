@@ -29,6 +29,10 @@ public class UserService {
             throw new IllegalArgumentException("E-mail já cadastrado.");
         }
 
+        if (userCreateDTO.getPassword() == null || userCreateDTO.getPassword().length() < 6) {
+            throw new IllegalArgumentException("A senha deve ter no mínimo 6 caracteres.");
+        }
+
         User newUser = new User();
         newUser.setName(userCreateDTO.getName());
         newUser.setEmail(userCreateDTO.getEmail());
@@ -45,6 +49,10 @@ public class UserService {
     public UserResponseDTO createAdminUser(UserCreateDTO userCreateDTO) {
         if (userRepository.findByEmail(userCreateDTO.getEmail()).isPresent()) {
             throw new IllegalArgumentException("E-mail já cadastrado.");
+        }
+
+        if (userCreateDTO.getPassword() == null || userCreateDTO.getPassword().length() < 6) {
+            throw new IllegalArgumentException("A senha deve ter no mínimo 6 caracteres.");
         }
 
         User newUser = new User();
@@ -92,6 +100,9 @@ public class UserService {
         }
         
         if (userUpdateDTO.getPassword() != null && !userUpdateDTO.getPassword().isEmpty()) {
+            if (userUpdateDTO.getPassword().length() < 6) {
+                throw new IllegalArgumentException("A senha deve ter no mínimo 6 caracteres.");
+            }
             user.setPassword(passwordEncoder.encode(userUpdateDTO.getPassword()));
         }
         
@@ -124,6 +135,16 @@ public class UserService {
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
+        
+        if (user.getRole() == User.UserRole.ADMIN) {
+            long adminCount = userRepository.findAll().stream()
+                    .filter(u -> u.getRole() == User.UserRole.ADMIN)
+                    .count();
+            
+            if (adminCount <= 1) {
+                throw new IllegalStateException("Não é possível excluir o último administrador do sistema.");
+            }
+        }
         
         userRepository.delete(user);
         userRepository.flush();

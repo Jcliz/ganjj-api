@@ -99,6 +99,10 @@ public class AddressService {
         Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + id));
 
+        if (!address.getActive()) {
+            throw new IllegalStateException("Não é possível editar um endereço inativo.");
+        }
+
         if (updateDTO.getRecipientName() != null) {
             address.setRecipientName(updateDTO.getRecipientName());
         }
@@ -175,6 +179,12 @@ public class AddressService {
     public void deleteAddress(Long id) {
         Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + id));
+
+        List<Address> userAddresses = addressRepository.findByUserIdAndActiveTrue(address.getUser().getId());
+        
+        if (userAddresses.size() == 1 && userAddresses.get(0).getId().equals(id)) {
+            throw new IllegalStateException("Não é possível excluir o único endereço ativo do usuário.");
+        }
 
         if (address.getIsDefault()) {
             List<Address> otherAddresses = addressRepository.findByUserIdAndActiveTrue(address.getUser().getId())
