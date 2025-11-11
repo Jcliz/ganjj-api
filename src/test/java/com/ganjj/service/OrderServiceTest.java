@@ -79,7 +79,6 @@ class OrderServiceTest {
 
     @Test
     void createOrder_shouldCreateSuccessfully() {
-         Arrange
         OrderCreateDTO createDTO = new OrderCreateDTO();
         createDTO.setUserId(1L);
         createDTO.setShoppingBagId(1L);
@@ -113,10 +112,8 @@ class OrderServiceTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
         when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
 
-         Act
         OrderResponseDTO result = orderService.createOrder(createDTO);
 
-         Assert
         assertThat(result).isNotNull();
         assertThat(result.getUserId()).isEqualTo(1L);
 
@@ -128,7 +125,6 @@ class OrderServiceTest {
 
     @Test
     void createOrder_shouldThrowException_whenUserNotFound() {
-         Arrange
         OrderCreateDTO createDTO = new OrderCreateDTO();
         createDTO.setUserId(1L);
         createDTO.setShoppingBagId(1L);
@@ -137,7 +133,6 @@ class OrderServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-         Act & Assert
         assertThatThrownBy(() -> orderService.createOrder(createDTO))
                 .isInstanceOf(ResourceNotFoundException.class);
 
@@ -147,7 +142,6 @@ class OrderServiceTest {
 
     @Test
     void createOrder_shouldThrowException_whenShoppingBagIsEmpty() {
-         Arrange
         OrderCreateDTO createDTO = new OrderCreateDTO();
         createDTO.setUserId(1L);
         createDTO.setShoppingBagId(1L);
@@ -161,7 +155,6 @@ class OrderServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(shoppingBagRepository.findById(1L)).thenReturn(Optional.of(shoppingBag));
 
-         Act & Assert
         assertThatThrownBy(() -> orderService.createOrder(createDTO))
                 .isInstanceOf(ValidationException.class);
 
@@ -170,33 +163,27 @@ class OrderServiceTest {
 
     @Test
     void getAllOrders_shouldReturnAllOrders() {
-         Arrange
         User user = createMockUser(1L, "test@example.com");
         Order order1 = createMockOrder(1L, user, Order.OrderStatus.PENDING);
         Order order2 = createMockOrder(2L, user, Order.OrderStatus.DELIVERED);
 
         when(orderRepository.findAll()).thenReturn(Arrays.asList(order1, order2));
 
-         Act
         List<OrderResponseDTO> result = orderService.getAllOrders();
 
-         Assert
         assertThat(result).hasSize(2);
         verify(orderRepository).findAll();
     }
 
     @Test
     void getOrderById_shouldReturnOrder() {
-         Arrange
         User user = createMockUser(1L, "test@example.com");
         Order order = createMockOrder(1L, user, Order.OrderStatus.PENDING);
 
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
 
-         Act
         OrderResponseDTO result = orderService.getOrderById(1L);
 
-         Assert
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
 
@@ -205,10 +192,8 @@ class OrderServiceTest {
 
     @Test
     void getOrderById_shouldThrowException_whenNotFound() {
-         Arrange
         when(orderRepository.findById(999L)).thenReturn(Optional.empty());
 
-         Act & Assert
         assertThatThrownBy(() -> orderService.getOrderById(999L))
                 .isInstanceOf(ResourceNotFoundException.class);
 
@@ -217,7 +202,6 @@ class OrderServiceTest {
 
     @Test
     void updateOrderStatus_shouldUpdateSuccessfully() {
-         Arrange
         User user = createMockUser(1L, "test@example.com");
         Order order = createMockOrder(1L, user, Order.OrderStatus.PENDING);
         OrderUpdateStatusDTO updateDTO = new OrderUpdateStatusDTO();
@@ -226,10 +210,8 @@ class OrderServiceTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenReturn(order);
 
-         Act
         OrderResponseDTO result = orderService.updateOrderStatus(1L, updateDTO);
 
-         Assert
         assertThat(result).isNotNull();
         verify(orderRepository).findById(1L);
         verify(orderRepository).save(any(Order.class));
@@ -237,17 +219,14 @@ class OrderServiceTest {
 
     @Test
     void deleteOrder_shouldDeleteSuccessfully() {
-         Arrange
         User user = createMockUser(1L, "test@example.com");
         Order order = createMockOrder(1L, user, Order.OrderStatus.PENDING);
 
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
         doNothing().when(orderRepository).delete(order);
 
-         Act
         orderService.deleteOrder(1L);
 
-         Assert
         verify(orderRepository).findById(1L);
         verify(orderRepository).delete(order);
     }

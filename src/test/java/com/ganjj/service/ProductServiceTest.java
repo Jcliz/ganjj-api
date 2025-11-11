@@ -48,7 +48,6 @@ class ProductServiceTest {
 
     @Test
     void createProduct_shouldCreateSuccessfully() {
-         Arrange
         ProductCreateDTO createDTO = new ProductCreateDTO();
         createDTO.setName("Tênis Nike Air Max");
         createDTO.setDescription("Tênis esportivo");
@@ -81,10 +80,8 @@ class ProductServiceTest {
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
         when(productRepository.save(any(Product.class))).thenReturn(savedProduct);
 
-         Act
         ProductResponseDTO result = productService.createProduct(createDTO);
 
-         Assert
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Tênis Nike Air Max");
         assertThat(result.getPrice()).isEqualByComparingTo(new BigDecimal("299.99"));
@@ -98,13 +95,11 @@ class ProductServiceTest {
 
     @Test
     void createProduct_shouldThrowException_whenPriceIsInvalid() {
-         Arrange
         ProductCreateDTO createDTO = new ProductCreateDTO();
         createDTO.setName("Produto");
         createDTO.setPrice(new BigDecimal("-10.00"));
         createDTO.setStockQuantity(10);
 
-         Act & Assert
         assertThatThrownBy(() -> productService.createProduct(createDTO))
                 .isInstanceOf(ValidationException.class);
 
@@ -113,13 +108,11 @@ class ProductServiceTest {
 
     @Test
     void createProduct_shouldThrowException_whenStockIsNegative() {
-         Arrange
         ProductCreateDTO createDTO = new ProductCreateDTO();
         createDTO.setName("Produto");
         createDTO.setPrice(new BigDecimal("100.00"));
         createDTO.setStockQuantity(-5);
 
-         Act & Assert
         assertThatThrownBy(() -> productService.createProduct(createDTO))
                 .isInstanceOf(ValidationException.class);
 
@@ -128,7 +121,6 @@ class ProductServiceTest {
 
     @Test
     void createProduct_shouldThrowException_whenBrandNotFound() {
-         Arrange
         ProductCreateDTO createDTO = new ProductCreateDTO();
         createDTO.setName("Produto");
         createDTO.setPrice(new BigDecimal("100.00"));
@@ -137,7 +129,6 @@ class ProductServiceTest {
 
         when(brandRepository.findById(999L)).thenReturn(Optional.empty());
 
-         Act & Assert
         assertThatThrownBy(() -> productService.createProduct(createDTO))
                 .isInstanceOf(ResourceNotFoundException.class);
 
@@ -147,16 +138,13 @@ class ProductServiceTest {
 
     @Test
     void getAllProductsList_shouldReturnAllProducts() {
-         Arrange
         Product product1 = createMockProduct(1L, "Produto 1", new BigDecimal("100.00"), 10);
         Product product2 = createMockProduct(2L, "Produto 2", new BigDecimal("200.00"), 20);
 
         when(productRepository.findAll()).thenReturn(Arrays.asList(product1, product2));
 
-         Act
         List<ProductResponseDTO> result = productService.getAllProductsList();
 
-         Assert
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getName()).isEqualTo("Produto 1");
         assertThat(result.get(1).getName()).isEqualTo("Produto 2");
@@ -166,15 +154,12 @@ class ProductServiceTest {
 
     @Test
     void getProductById_shouldReturnProduct() {
-         Arrange
         Product product = createMockProduct(1L, "Produto", new BigDecimal("100.00"), 10);
 
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
 
-         Act
         ProductResponseDTO result = productService.getProductById(1L);
 
-         Assert
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo("Produto");
@@ -184,10 +169,8 @@ class ProductServiceTest {
 
     @Test
     void getProductById_shouldThrowException_whenNotFound() {
-         Arrange
         when(productRepository.findById(999L)).thenReturn(Optional.empty());
 
-         Act & Assert
         assertThatThrownBy(() -> productService.getProductById(999L))
                 .isInstanceOf(ResourceNotFoundException.class);
 
@@ -196,7 +179,6 @@ class ProductServiceTest {
 
     @Test
     void updateProduct_shouldUpdateSuccessfully() {
-         Arrange
         Product existingProduct = createMockProduct(1L, "Produto", new BigDecimal("100.00"), 10);
         ProductUpdateDTO updateDTO = new ProductUpdateDTO();
         updateDTO.setName("Produto Updated");
@@ -206,10 +188,8 @@ class ProductServiceTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(existingProduct));
         when(productRepository.save(any(Product.class))).thenReturn(existingProduct);
 
-         Act
         ProductResponseDTO result = productService.updateProduct(1L, updateDTO);
 
-         Assert
         assertThat(result).isNotNull();
         verify(productRepository).findById(1L);
         verify(productRepository).save(any(Product.class));
@@ -217,24 +197,19 @@ class ProductServiceTest {
 
     @Test
     void deleteProduct_shouldDeleteSuccessfully() {
-         Arrange
         when(productRepository.existsById(1L)).thenReturn(true);
         doNothing().when(productRepository).deleteById(1L);
 
-         Act
         productService.deleteProduct(1L);
 
-         Assert
         verify(productRepository).existsById(1L);
         verify(productRepository).deleteById(1L);
     }
 
     @Test
     void deleteProduct_shouldThrowException_whenNotFound() {
-         Arrange
         when(productRepository.existsById(999L)).thenReturn(false);
 
-         Act & Assert
         assertThatThrownBy(() -> productService.deleteProduct(999L))
                 .isInstanceOf(ResourceNotFoundException.class);
 

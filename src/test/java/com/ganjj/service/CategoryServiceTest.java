@@ -40,7 +40,6 @@ class CategoryServiceTest {
 
     @Test
     void createCategory_shouldCreateSuccessfully() {
-         Arrange
         CategoryCreateDTO createDTO = new CategoryCreateDTO();
         createDTO.setName("Roupas");
         createDTO.setDescription("Roupas em geral");
@@ -56,10 +55,8 @@ class CategoryServiceTest {
         when(categoryRepository.findByName("Roupas")).thenReturn(Optional.empty());
         when(categoryRepository.save(any(Category.class))).thenReturn(savedCategory);
 
-         Act
         CategoryResponseDTO result = categoryService.createCategory(createDTO);
 
-         Assert
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Roupas");
         assertThat(result.getDescription()).isEqualTo("Roupas em geral");
@@ -71,7 +68,6 @@ class CategoryServiceTest {
 
     @Test
     void createCategory_shouldThrowException_whenNameAlreadyExists() {
-         Arrange
         CategoryCreateDTO createDTO = new CategoryCreateDTO();
         createDTO.setName("Roupas");
 
@@ -80,7 +76,6 @@ class CategoryServiceTest {
 
         when(categoryRepository.findByName("Roupas")).thenReturn(Optional.of(existingCategory));
 
-         Act & Assert
         assertThatThrownBy(() -> categoryService.createCategory(createDTO))
                 .isInstanceOf(ValidationException.class);
 
@@ -90,17 +85,14 @@ class CategoryServiceTest {
 
     @Test
     void getActiveCategories_shouldReturnActiveCategories() {
-         Arrange
         Category category1 = createMockCategory(1L, "Roupas", true);
         Category category2 = createMockCategory(2L, "Calçados", true);
 
         when(categoryRepository.findByActive(true))
                 .thenReturn(Arrays.asList(category1, category2));
 
-         Act
         List<CategoryResponseDTO> result = categoryService.getActiveCategories();
 
-         Assert
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getName()).isEqualTo("Roupas");
         assertThat(result.get(1).getName()).isEqualTo("Calçados");
@@ -110,15 +102,12 @@ class CategoryServiceTest {
 
     @Test
     void getCategoryById_shouldReturnCategory() {
-         Arrange
         Category category = createMockCategory(1L, "Roupas", true);
 
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
 
-         Act
         CategoryResponseDTO result = categoryService.getCategoryById(1L);
 
-         Assert
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo("Roupas");
@@ -128,10 +117,8 @@ class CategoryServiceTest {
 
     @Test
     void getCategoryById_shouldThrowException_whenNotFound() {
-         Arrange
         when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
 
-         Act & Assert
         assertThatThrownBy(() -> categoryService.getCategoryById(999L))
                 .isInstanceOf(ResourceNotFoundException.class);
 
@@ -140,7 +127,6 @@ class CategoryServiceTest {
 
     @Test
     void updateCategory_shouldUpdateSuccessfully() {
-         Arrange
         Category existingCategory = createMockCategory(1L, "Roupas", true);
         CategoryUpdateDTO updateDTO = new CategoryUpdateDTO();
         updateDTO.setName("Roupas Updated");
@@ -150,10 +136,8 @@ class CategoryServiceTest {
         when(categoryRepository.findByName("Roupas Updated")).thenReturn(Optional.empty());
         when(categoryRepository.save(any(Category.class))).thenReturn(existingCategory);
 
-         Act
         CategoryResponseDTO result = categoryService.updateCategory(1L, updateDTO);
 
-         Assert
         assertThat(result).isNotNull();
         verify(categoryRepository).findById(1L);
         verify(categoryRepository).save(any(Category.class));
@@ -161,7 +145,6 @@ class CategoryServiceTest {
 
     @Test
     void updateCategory_shouldThrowException_whenNewNameAlreadyExists() {
-         Arrange
         Category existingCategory = createMockCategory(1L, "Roupas", true);
         Category anotherCategory = createMockCategory(2L, "Calçados", true);
         
@@ -171,7 +154,6 @@ class CategoryServiceTest {
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(existingCategory));
         when(categoryRepository.findByName("Calçados")).thenReturn(Optional.of(anotherCategory));
 
-         Act & Assert
         assertThatThrownBy(() -> categoryService.updateCategory(1L, updateDTO))
                 .isInstanceOf(ValidationException.class);
 
@@ -181,24 +163,20 @@ class CategoryServiceTest {
 
     @Test
     void deleteCategory_shouldDeleteSuccessfully() {
-         Arrange
         Category category = createMockCategory(1L, "Roupas", true);
         category.setProducts(new ArrayList<>());
 
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
         doNothing().when(categoryRepository).delete(category);
 
-         Act
         categoryService.deleteCategory(1L);
 
-         Assert
         verify(categoryRepository).findById(1L);
         verify(categoryRepository).delete(category);
     }
 
     @Test
     void deleteCategory_shouldThrowException_whenHasProducts() {
-         Arrange
         Category category = createMockCategory(1L, "Roupas", true);
         List<Product> products = new ArrayList<>();
         products.add(new Product());
@@ -206,7 +184,6 @@ class CategoryServiceTest {
 
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
 
-         Act & Assert
         assertThatThrownBy(() -> categoryService.deleteCategory(1L))
                 .isInstanceOf(ConflictException.class);
 
@@ -216,16 +193,13 @@ class CategoryServiceTest {
 
     @Test
     void getAllCategories_shouldReturnAllCategories() {
-         Arrange
         Category category1 = createMockCategory(1L, "Roupas", true);
         Category category2 = createMockCategory(2L, "Calçados", false);
 
         when(categoryRepository.findAll()).thenReturn(Arrays.asList(category1, category2));
 
-         Act
         List<CategoryResponseDTO> result = categoryService.getAllCategories();
 
-         Assert
         assertThat(result).hasSize(2);
         verify(categoryRepository).findAll();
     }
