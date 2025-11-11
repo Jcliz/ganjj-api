@@ -4,11 +4,13 @@ import com.ganjj.dto.OrderCreateDTO;
 import com.ganjj.dto.OrderResponseDTO;
 import com.ganjj.dto.OrderUpdateStatusDTO;
 import com.ganjj.entities.*;
+import com.ganjj.exception.ConflictException;
+import com.ganjj.exception.ErrorCode;
+import com.ganjj.exception.ResourceNotFoundException;
+import com.ganjj.exception.ValidationException;
 import com.ganjj.repository.*;
 import com.ganjj.security.UserDetailsImpl;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -46,32 +48,32 @@ public class OrderService {
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
         
         if (!isAdmin && !authenticatedUserId.equals(createDTO.getUserId())) {
-            throw new AccessDeniedException("Você não tem permissão para criar pedidos para outros usuários.");
+            throw new com.ganjj.exception.AccessDeniedException(ErrorCode.AUTH_ACCESS_DENIED);
         }
         
         User user = userRepository.findById(createDTO.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + createDTO.getUserId()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, createDTO.getUserId()));
 
         ShoppingBag shoppingBag = shoppingBagRepository.findById(createDTO.getShoppingBagId())
-                .orElseThrow(() -> new EntityNotFoundException("Sacola não encontrada com o ID: " + createDTO.getShoppingBagId()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SHOPPING_BAG_NOT_FOUND, createDTO.getShoppingBagId()));
 
         if (!shoppingBag.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("A sacola não pertence ao usuário informado.");
+            throw new ValidationException(ErrorCode.ORDER_BAG_NOT_BELONGS_TO_USER);
         }
 
         if (shoppingBag.getItems().isEmpty()) {
-            throw new IllegalArgumentException("A sacola está vazia. Não é possível criar um pedido.");
+            throw new ValidationException(ErrorCode.ORDER_BAG_IS_EMPTY);
         }
 
         if (!shoppingBag.getStatus().equals(ShoppingBag.ShoppingBagStatus.OPEN)) {
-            throw new IllegalArgumentException("A sacola já foi finalizada.");
+            throw new ValidationException(ErrorCode.ORDER_BAG_ALREADY_FINALIZED);
         }
 
         Address address = addressRepository.findById(createDTO.getAddressId())
-                .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + createDTO.getAddressId()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ADDRESS_NOT_FOUND, createDTO.getAddressId()));
 
         if (!address.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("O endereço não pertence ao usuário informado.");
+            throw new ValidationException(ErrorCode.ORDER_ADDRESS_NOT_BELONGS_TO_USER);
         }
 
         Order order = new Order();
@@ -90,7 +92,7 @@ public class OrderService {
 
         for (ShoppingBagItem bagItem : shoppingBag.getItems()) {
             Product product = productRepository.findById(Long.parseLong(bagItem.getProductId()))
-                    .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com o ID: " + bagItem.getProductId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND, bagItem.getProductId()));
 
             OrderItem orderItem = new OrderItem();
             orderItem.setProduct(product);
@@ -103,7 +105,7 @@ public class OrderService {
             order.addItem(orderItem);
 
             if (product.getStockQuantity() < bagItem.getQuantity()) {
-                throw new IllegalStateException("Estoque insuficiente para o produto: " + product.getName());
+                throw new ConflictException(ErrorCode.ORDER_INSUFFICIENT_STOCK, product.getName());
             }
             product.setStockQuantity(product.getStockQuantity() - bagItem.getQuantity());
             productRepository.save(product);
@@ -129,14 +131,14 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderResponseDTO getOrderById(Long id) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND, id));
         return new OrderResponseDTO(order);
     }
 
     @Transactional(readOnly = true)
     public List<OrderResponseDTO> getUserOrders(Long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new EntityNotFoundException("Usuário não encontrado com o ID: " + userId);
+            throw new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, userId);
         }
         return orderRepository.findByUserIdOrderByOrderDateDesc(userId).stream()
                 .map(OrderResponseDTO::new)
@@ -146,7 +148,7 @@ public class OrderService {
     @Transactional
     public OrderResponseDTO updateOrderStatus(Long id, OrderUpdateStatusDTO updateDTO) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND, id));
 
         if (updateDTO.getOrderStatus() != null) {
             order.setStatus(updateDTO.getOrderStatus());
@@ -191,11 +193,11 @@ public class OrderService {
     @Transactional
     public void deleteOrder(Long id) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND));
 
         if (order.getStatus() == Order.OrderStatus.DELIVERED || 
             order.getStatus() == Order.OrderStatus.SHIPPED) {
-            throw new IllegalStateException("Não é possível excluir um pedido que já foi enviado ou entregue.");
+            throw new ConflictException(ErrorCode.ORDER_CANNOT_DELETE_SENT_OR_DELIVERED);
         }
 
         if (order.getStatus() != Order.OrderStatus.CANCELLED) {

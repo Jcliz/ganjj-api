@@ -6,10 +6,12 @@ import com.ganjj.dto.ProductUpdateDTO;
 import com.ganjj.entities.Brand;
 import com.ganjj.entities.Category;
 import com.ganjj.entities.Product;
+import com.ganjj.exception.ErrorCode;
+import com.ganjj.exception.ResourceNotFoundException;
+import com.ganjj.exception.ValidationException;
 import com.ganjj.repository.BrandRepository;
 import com.ganjj.repository.CategoryRepository;
 import com.ganjj.repository.ProductRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,11 +37,11 @@ public class ProductService {
     @Transactional
     public ProductResponseDTO createProduct(ProductCreateDTO productCreateDTO) {
         if (productCreateDTO.getPrice() != null && productCreateDTO.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("O preço do produto deve ser maior que zero.");
+            throw new ValidationException(ErrorCode.PRODUCT_PRICE_INVALID);
         }
 
         if (productCreateDTO.getStockQuantity() != null && productCreateDTO.getStockQuantity() < 0) {
-            throw new IllegalArgumentException("A quantidade em estoque não pode ser negativa.");
+            throw new ValidationException(ErrorCode.PRODUCT_STOCK_NEGATIVE);
         }
 
         Product product = new Product();
@@ -50,13 +52,13 @@ public class ProductService {
         
         if (productCreateDTO.getBrandId() != null) {
             Brand brand = brandRepository.findById(productCreateDTO.getBrandId())
-                    .orElseThrow(() -> new EntityNotFoundException("Marca não encontrada com o ID: " + productCreateDTO.getBrandId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.BRAND_NOT_FOUND, productCreateDTO.getBrandId()));
             product.setBrand(brand);
         }
         
         if (productCreateDTO.getCategoryId() != null) {
             Category category = categoryRepository.findById(productCreateDTO.getCategoryId())
-                    .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + productCreateDTO.getCategoryId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND, productCreateDTO.getCategoryId()));
             product.setCategory(category);
         }
         
@@ -88,7 +90,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductResponseDTO getProductById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND, id));
         
         return new ProductResponseDTO(product);
     }
@@ -105,7 +107,7 @@ public class ProductService {
     @Transactional
     public ProductResponseDTO updateProduct(Long id, ProductUpdateDTO productUpdateDTO) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND, id));
         
         if (productUpdateDTO.getName() != null) {
             product.setName(productUpdateDTO.getName());
@@ -117,27 +119,27 @@ public class ProductService {
         
         if (productUpdateDTO.getPrice() != null) {
             if (productUpdateDTO.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException("O preço do produto deve ser maior que zero.");
+                throw new ValidationException(ErrorCode.PRODUCT_PRICE_INVALID);
             }
             product.setPrice(productUpdateDTO.getPrice());
         }
         
         if (productUpdateDTO.getStockQuantity() != null) {
             if (productUpdateDTO.getStockQuantity() < 0) {
-                throw new IllegalArgumentException("A quantidade em estoque não pode ser negativa.");
+                throw new ValidationException(ErrorCode.PRODUCT_STOCK_NEGATIVE);
             }
             product.setStockQuantity(productUpdateDTO.getStockQuantity());
         }
         
         if (productUpdateDTO.getBrandId() != null) {
             Brand brand = brandRepository.findById(productUpdateDTO.getBrandId())
-                    .orElseThrow(() -> new EntityNotFoundException("Marca não encontrada com o ID: " + productUpdateDTO.getBrandId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.BRAND_NOT_FOUND, productUpdateDTO.getBrandId()));
             product.setBrand(brand);
         }
         
         if (productUpdateDTO.getCategoryId() != null) {
             Category category = categoryRepository.findById(productUpdateDTO.getCategoryId())
-                    .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + productUpdateDTO.getCategoryId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.CATEGORY_NOT_FOUND, productUpdateDTO.getCategoryId()));
             product.setCategory(category);
         }
         
@@ -153,7 +155,7 @@ public class ProductService {
     @Transactional
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
-            throw new EntityNotFoundException("Produto não encontrado com o ID: " + id);
+            throw new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND, id);
         }
         
         productRepository.deleteById(id);

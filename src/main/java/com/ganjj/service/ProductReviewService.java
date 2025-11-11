@@ -4,11 +4,13 @@ import com.ganjj.dto.ProductReviewCreateDTO;
 import com.ganjj.dto.ProductReviewResponseDTO;
 import com.ganjj.dto.ProductReviewUpdateDTO;
 import com.ganjj.entities.*;
+import com.ganjj.exception.ErrorCode;
+import com.ganjj.exception.ResourceNotFoundException;
+import com.ganjj.exception.ValidationException;
 import com.ganjj.repository.OrderRepository;
 import com.ganjj.repository.ProductRepository;
 import com.ganjj.repository.ProductReviewRepository;
 import com.ganjj.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,20 +37,20 @@ public class ProductReviewService {
     @Transactional
     public ProductReviewResponseDTO createReview(ProductReviewCreateDTO createDTO) {
         if (createDTO.getRating() < 1 || createDTO.getRating() > 5) {
-            throw new IllegalArgumentException("A avaliação deve estar entre 1 e 5 estrelas.");
+            throw new ValidationException(ErrorCode.REVIEW_RATING_INVALID);
         }
 
         User user = userRepository.findById(createDTO.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + createDTO.getUserId()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, createDTO.getUserId()));
 
         Product product = productRepository.findById(createDTO.getProductId())
-                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com o ID: " + createDTO.getProductId()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND, createDTO.getProductId()));
 
         Optional<ProductReview> existingReview = reviewRepository.findByUserIdAndProductId(
                 createDTO.getUserId(), createDTO.getProductId());
 
         if (existingReview.isPresent()) {
-            throw new IllegalArgumentException("Você já avaliou este produto. Use a edição para atualizar sua avaliação.");
+            throw new ValidationException(ErrorCode.REVIEW_ALREADY_EXISTS);
         }
 
         ProductReview review = new ProductReview();
@@ -59,10 +61,10 @@ public class ProductReviewService {
 
         if (createDTO.getOrderId() != null) {
             Order order = orderRepository.findById(createDTO.getOrderId())
-                    .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com o ID: " + createDTO.getOrderId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ORDER_NOT_FOUND, createDTO.getOrderId()));
 
             if (!order.getUser().getId().equals(user.getId())) {
-                throw new IllegalArgumentException("O pedido não pertence ao usuário informado.");
+                throw new ValidationException(ErrorCode.REVIEW_ORDER_NOT_BELONGS_TO_USER);
             }
 
             boolean productInOrder = order.getItems().stream()
@@ -81,7 +83,7 @@ public class ProductReviewService {
     @Transactional(readOnly = true)
     public List<ProductReviewResponseDTO> getProductReviews(Long productId) {
         if (!productRepository.existsById(productId)) {
-            throw new EntityNotFoundException("Produto não encontrado com o ID: " + productId);
+            throw new ResourceNotFoundException(ErrorCode.PRODUCT_NOT_FOUND, productId);
         }
         return reviewRepository.findByProductIdAndActiveTrue(productId).stream()
                 .map(ProductReviewResponseDTO::new)
@@ -91,7 +93,7 @@ public class ProductReviewService {
     @Transactional(readOnly = true)
     public List<ProductReviewResponseDTO> getUserReviews(Long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new EntityNotFoundException("Usuário não encontrado com o ID: " + userId);
+            throw new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, userId);
         }
         return reviewRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(ProductReviewResponseDTO::new)
@@ -101,18 +103,18 @@ public class ProductReviewService {
     @Transactional(readOnly = true)
     public ProductReviewResponseDTO getReviewById(Long id) {
         ProductReview review = reviewRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Avaliação não encontrada com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.REVIEW_NOT_FOUND, id));
         return new ProductReviewResponseDTO(review);
     }
 
     @Transactional
     public ProductReviewResponseDTO updateReview(Long id, ProductReviewUpdateDTO updateDTO) {
         ProductReview review = reviewRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Avaliação não encontrada com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.REVIEW_NOT_FOUND, id));
 
         if (updateDTO.getRating() != null) {
             if (updateDTO.getRating() < 1 || updateDTO.getRating() > 5) {
-                throw new IllegalArgumentException("A avaliação deve estar entre 1 e 5 estrelas.");
+                throw new ValidationException(ErrorCode.REVIEW_RATING_INVALID);
             }
             review.setRating(updateDTO.getRating());
         }
@@ -132,7 +134,7 @@ public class ProductReviewService {
     @Transactional
     public void deleteReview(Long id) {
         ProductReview review = reviewRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Avaliação não encontrada com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.REVIEW_NOT_FOUND, id));
         
         reviewRepository.delete(review);
     }

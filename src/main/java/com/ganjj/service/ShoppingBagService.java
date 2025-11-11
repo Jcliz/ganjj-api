@@ -4,10 +4,13 @@ import com.ganjj.dto.*;
 import com.ganjj.entities.ShoppingBag;
 import com.ganjj.entities.ShoppingBagItem;
 import com.ganjj.entities.User;
+import com.ganjj.exception.ConflictException;
+import com.ganjj.exception.ErrorCode;
+import com.ganjj.exception.ResourceNotFoundException;
+import com.ganjj.exception.ValidationException;
 import com.ganjj.repository.ShoppingBagItemRepository;
 import com.ganjj.repository.ShoppingBagRepository;
 import com.ganjj.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +33,7 @@ public class ShoppingBagService {
     @Transactional
     public ShoppingBagResponseDTO createShoppingBag(ShoppingBagCreateDTO createDTO) {
         User user = userRepository.findById(createDTO.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + createDTO.getUserId()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND));
 
         Optional<ShoppingBag> existingOpenBag = shoppingBagRepository
                 .findByUserAndStatusOrderByCreatedAtDesc(user, ShoppingBag.ShoppingBagStatus.OPEN);
@@ -51,7 +54,7 @@ public class ShoppingBagService {
     @Transactional(readOnly = true)
     public ShoppingBagResponseDTO getShoppingBag(Long id) {
         ShoppingBag shoppingBag = shoppingBagRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Sacola não encontrada com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SHOPPING_BAG_NOT_FOUND));
         
         return new ShoppingBagResponseDTO(shoppingBag);
     }
@@ -59,7 +62,7 @@ public class ShoppingBagService {
     @Transactional(readOnly = true)
     public List<ShoppingBagSummaryDTO> getUserShoppingBags(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND));
         
         List<ShoppingBag> bags = shoppingBagRepository.findByUser(user);
         return ShoppingBagSummaryDTO.fromEntities(bags);
@@ -68,11 +71,11 @@ public class ShoppingBagService {
     @Transactional(readOnly = true)
     public ShoppingBagResponseDTO getActiveShoppingBag(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND));
         
         ShoppingBag shoppingBag = shoppingBagRepository
                 .findByUserAndStatusOrderByCreatedAtDesc(user, ShoppingBag.ShoppingBagStatus.OPEN)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não possui uma sacola ativa"));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SHOPPING_BAG_NOT_FOUND));
         
         return new ShoppingBagResponseDTO(shoppingBag);
     }
@@ -80,10 +83,10 @@ public class ShoppingBagService {
     @Transactional
     public ShoppingBagResponseDTO addItemToShoppingBag(Long bagId, ShoppingBagItemDTO itemDTO) {
         ShoppingBag shoppingBag = shoppingBagRepository.findById(bagId)
-                .orElseThrow(() -> new EntityNotFoundException("Sacola não encontrada com o ID: " + bagId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SHOPPING_BAG_NOT_FOUND));
         
         if (shoppingBag.getStatus() != ShoppingBag.ShoppingBagStatus.OPEN) {
-            throw new IllegalStateException("Não é possível adicionar itens a uma sacola que não está aberta");
+            throw new ConflictException(ErrorCode.SHOPPING_BAG_NOT_OPEN);
         }
         
         Optional<ShoppingBagItem> existingItem = shoppingBagItemRepository
@@ -115,21 +118,21 @@ public class ShoppingBagService {
     @Transactional
     public ShoppingBagResponseDTO updateItemQuantity(Long bagId, Long itemId, Integer quantity) {
         if (quantity <= 0) {
-            throw new IllegalArgumentException("A quantidade deve ser maior que zero");
+            throw new ValidationException(ErrorCode.SHOPPING_BAG_INVALID_QUANTITY);
         }
         
         ShoppingBag shoppingBag = shoppingBagRepository.findById(bagId)
-                .orElseThrow(() -> new EntityNotFoundException("Sacola não encontrada com o ID: " + bagId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SHOPPING_BAG_NOT_FOUND));
         
         if (shoppingBag.getStatus() != ShoppingBag.ShoppingBagStatus.OPEN) {
-            throw new IllegalStateException("Não é possível alterar itens de uma sacola que não está aberta");
+            throw new ConflictException(ErrorCode.SHOPPING_BAG_NOT_OPEN);
         }
         
         ShoppingBagItem item = shoppingBagItemRepository.findById(itemId)
-                .orElseThrow(() -> new EntityNotFoundException("Item não encontrado com o ID: " + itemId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SHOPPING_BAG_ITEM_NOT_FOUND));
         
         if (!item.getShoppingBag().getId().equals(bagId)) {
-            throw new IllegalArgumentException("O item não pertence à sacola especificada");
+            throw new ValidationException(ErrorCode.SHOPPING_BAG_ITEM_NOT_BELONGS_TO_BAG);
         }
         
         item.setQuantity(quantity);
@@ -144,17 +147,17 @@ public class ShoppingBagService {
     @Transactional
     public ShoppingBagResponseDTO removeItem(Long bagId, Long itemId) {
         ShoppingBag shoppingBag = shoppingBagRepository.findById(bagId)
-                .orElseThrow(() -> new EntityNotFoundException("Sacola não encontrada com o ID: " + bagId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SHOPPING_BAG_NOT_FOUND));
         
         if (shoppingBag.getStatus() != ShoppingBag.ShoppingBagStatus.OPEN) {
-            throw new IllegalStateException("Não é possível remover itens de uma sacola que não está aberta");
+            throw new ConflictException(ErrorCode.SHOPPING_BAG_CANNOT_REMOVE_FROM_CLOSED);
         }
         
         ShoppingBagItem item = shoppingBagItemRepository.findById(itemId)
-                .orElseThrow(() -> new EntityNotFoundException("Item não encontrado com o ID: " + itemId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SHOPPING_BAG_ITEM_NOT_FOUND));
         
         if (!item.getShoppingBag().getId().equals(bagId)) {
-            throw new IllegalArgumentException("O item não pertence à sacola especificada");
+            throw new ValidationException(ErrorCode.SHOPPING_BAG_ITEM_NOT_BELONGS_TO_BAG);
         }
         
         shoppingBag.removeItem(item);
@@ -169,7 +172,7 @@ public class ShoppingBagService {
     @Transactional
     public ShoppingBagResponseDTO updateShoppingBagStatus(Long bagId, ShoppingBagStatusDTO statusDTO) {
         ShoppingBag shoppingBag = shoppingBagRepository.findById(bagId)
-                .orElseThrow(() -> new EntityNotFoundException("Sacola não encontrada com o ID: " + bagId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SHOPPING_BAG_NOT_FOUND));
         
         try {
             ShoppingBag.ShoppingBagStatus newStatus = ShoppingBag.ShoppingBagStatus.valueOf(statusDTO.getStatus());
@@ -178,14 +181,14 @@ public class ShoppingBagService {
             
             return new ShoppingBagResponseDTO(shoppingBag);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Status inválido: " + statusDTO.getStatus());
+            throw new ValidationException(ErrorCode.SHOPPING_BAG_INVALID_STATUS);
         }
     }
 
     @Transactional
     public void deleteShoppingBag(Long id) {
         ShoppingBag shoppingBag = shoppingBagRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Sacola não encontrada com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SHOPPING_BAG_NOT_FOUND));
         
         shoppingBagRepository.delete(shoppingBag);
     }
@@ -193,10 +196,10 @@ public class ShoppingBagService {
     @Transactional
     public ShoppingBagResponseDTO clearShoppingBag(Long id) {
         ShoppingBag shoppingBag = shoppingBagRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Sacola não encontrada com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SHOPPING_BAG_NOT_FOUND));
         
         if (shoppingBag.getStatus() != ShoppingBag.ShoppingBagStatus.OPEN) {
-            throw new IllegalStateException("Não é possível limpar uma sacola que não está aberta");
+            throw new ConflictException(ErrorCode.SHOPPING_BAG_CANNOT_CLEAR_CLOSED);
         }
         
         shoppingBag.getItems().clear();

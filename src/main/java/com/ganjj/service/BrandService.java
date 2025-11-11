@@ -4,8 +4,11 @@ import com.ganjj.dto.BrandCreateDTO;
 import com.ganjj.dto.BrandResponseDTO;
 import com.ganjj.dto.BrandUpdateDTO;
 import com.ganjj.entities.Brand;
+import com.ganjj.exception.ConflictException;
+import com.ganjj.exception.ErrorCode;
+import com.ganjj.exception.ResourceNotFoundException;
+import com.ganjj.exception.ValidationException;
 import com.ganjj.repository.BrandRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +25,7 @@ public class BrandService {
     @Transactional
     public BrandResponseDTO createBrand(BrandCreateDTO brandCreateDTO) {
         if (brandRepository.existsByName(brandCreateDTO.getName())) {
-            throw new IllegalArgumentException("Já existe uma marca com este nome.");
+            throw new ValidationException(ErrorCode.BRAND_NAME_ALREADY_EXISTS);
         }
 
         Brand brand = new Brand();
@@ -55,7 +58,7 @@ public class BrandService {
     @Transactional(readOnly = true)
     public BrandResponseDTO getBrandById(Long id) {
         Brand brand = brandRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Marca não encontrada com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.BRAND_NOT_FOUND, id));
         
         return new BrandResponseDTO(brand);
     }
@@ -63,11 +66,11 @@ public class BrandService {
     @Transactional
     public BrandResponseDTO updateBrand(Long id, BrandUpdateDTO brandUpdateDTO) {
         Brand brand = brandRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Marca não encontrada com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.BRAND_NOT_FOUND, id));
         
         if (brandUpdateDTO.getName() != null && !brandUpdateDTO.getName().equals(brand.getName())) {
             if (brandRepository.existsByName(brandUpdateDTO.getName())) {
-                throw new IllegalArgumentException("Já existe uma marca com este nome.");
+                throw new ValidationException(ErrorCode.BRAND_NAME_ALREADY_EXISTS);
             }
             brand.setName(brandUpdateDTO.getName());
         }
@@ -96,10 +99,10 @@ public class BrandService {
     @Transactional
     public void deleteBrand(Long id) {
         Brand brand = brandRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Marca não encontrada com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.BRAND_NOT_FOUND, id));
         
         if (!brand.getProducts().isEmpty()) {
-            throw new IllegalStateException("Não é possível excluir uma marca que possui produtos associados.");
+            throw new ConflictException(ErrorCode.BRAND_HAS_PRODUCTS);
         }
         
         brandRepository.delete(brand);

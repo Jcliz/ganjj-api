@@ -4,8 +4,11 @@ import com.ganjj.dto.UserCreateDTO;
 import com.ganjj.dto.UserResponseDTO;
 import com.ganjj.dto.UserUpdateDTO;
 import com.ganjj.entities.User;
+import com.ganjj.exception.ConflictException;
+import com.ganjj.exception.ErrorCode;
+import com.ganjj.exception.ResourceNotFoundException;
+import com.ganjj.exception.ValidationException;
 import com.ganjj.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,11 +29,11 @@ public class UserService {
     @Transactional
     public UserResponseDTO createUser(UserCreateDTO userCreateDTO) {
         if (userRepository.findByEmail(userCreateDTO.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("E-mail já cadastrado.");
+            throw new ValidationException(ErrorCode.USER_EMAIL_ALREADY_EXISTS);
         }
 
         if (userCreateDTO.getPassword() == null || userCreateDTO.getPassword().length() < 6) {
-            throw new IllegalArgumentException("A senha deve ter no mínimo 6 caracteres.");
+            throw new ValidationException(ErrorCode.USER_PASSWORD_TOO_SHORT);
         }
 
         User newUser = new User();
@@ -48,11 +51,11 @@ public class UserService {
     @Transactional
     public UserResponseDTO createAdminUser(UserCreateDTO userCreateDTO) {
         if (userRepository.findByEmail(userCreateDTO.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("E-mail já cadastrado.");
+            throw new ValidationException(ErrorCode.USER_EMAIL_ALREADY_EXISTS);
         }
 
         if (userCreateDTO.getPassword() == null || userCreateDTO.getPassword().length() < 6) {
-            throw new IllegalArgumentException("A senha deve ter no mínimo 6 caracteres.");
+            throw new ValidationException(ErrorCode.USER_PASSWORD_TOO_SHORT);
         }
 
         User newUser = new User();
@@ -78,7 +81,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponseDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, id));
                 
         return new UserResponseDTO(user);
     }
@@ -86,11 +89,11 @@ public class UserService {
     @Transactional
     public UserResponseDTO updateUser(Long id, UserUpdateDTO userUpdateDTO) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, id));
         
         if (userUpdateDTO.getEmail() != null && !userUpdateDTO.getEmail().equals(user.getEmail())) {
             if (userRepository.findByEmail(userUpdateDTO.getEmail()).isPresent()) {
-                throw new IllegalArgumentException("E-mail já cadastrado para outro usuário.");
+                throw new ValidationException(ErrorCode.USER_EMAIL_ALREADY_EXISTS_FOR_ANOTHER);
             }
             user.setEmail(userUpdateDTO.getEmail());
         }
@@ -101,7 +104,7 @@ public class UserService {
         
         if (userUpdateDTO.getPassword() != null && !userUpdateDTO.getPassword().isEmpty()) {
             if (userUpdateDTO.getPassword().length() < 6) {
-                throw new IllegalArgumentException("A senha deve ter no mínimo 6 caracteres.");
+                throw new ValidationException(ErrorCode.USER_PASSWORD_TOO_SHORT);
             }
             user.setPassword(passwordEncoder.encode(userUpdateDTO.getPassword()));
         }
@@ -118,7 +121,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO updateUserRole(Long id, String role) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, id));
         
         try {
             User.UserRole userRole = User.UserRole.valueOf(role.toUpperCase());
@@ -127,14 +130,14 @@ public class UserService {
             
             return new UserResponseDTO(savedUser);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Role inválida: " + role);
+            throw new ValidationException(ErrorCode.USER_INVALID_ROLE, role);
         }
     }
     
     @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, id));
         
         if (user.getRole() == User.UserRole.ADMIN) {
             long adminCount = userRepository.findAll().stream()
@@ -142,7 +145,7 @@ public class UserService {
                     .count();
             
             if (adminCount <= 1) {
-                throw new IllegalStateException("Não é possível excluir o último administrador do sistema.");
+                throw new ConflictException(ErrorCode.USER_CANNOT_DELETE_LAST_ADMIN);
             }
         }
         

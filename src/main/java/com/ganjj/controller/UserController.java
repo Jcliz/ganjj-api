@@ -4,13 +4,13 @@ import com.ganjj.dto.UserCreateDTO;
 import com.ganjj.dto.UserResponseDTO;
 import com.ganjj.dto.UserRoleUpdateDTO;
 import com.ganjj.dto.UserUpdateDTO;
+import com.ganjj.exception.AccessDeniedException;
+import com.ganjj.exception.ErrorCode;
 import com.ganjj.security.UserDetailsImpl;
 import com.ganjj.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -68,7 +68,7 @@ public class UserController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         
         if (!isAdmin && !userDetails.getId().equals(id)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new AccessDeniedException(ErrorCode.USER_ACCESS_DENIED);
         }
         
         return ResponseEntity.ok()
@@ -90,8 +90,7 @@ public class UserController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         
         if (!isAdmin && !userDetails.getId().equals(id)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(null);
+            throw new AccessDeniedException(ErrorCode.USER_ACCESS_DENIED);
         }
         
         return ResponseEntity.ok(userService.updateUser(id, userUpdateDTO));
@@ -114,25 +113,10 @@ public class UserController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         
         if (!isAdmin && !userDetails.getId().equals(id)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new AccessDeniedException(ErrorCode.USER_ACCESS_DENIED);
         }
         
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
-    }
-    
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-    }
-    
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<String> handleEntityNotFoundException(EntityNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-    }
-
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<String> handleIllegalStateException(IllegalStateException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
 }

@@ -5,9 +5,11 @@ import com.ganjj.dto.AddressResponseDTO;
 import com.ganjj.dto.AddressUpdateDTO;
 import com.ganjj.entities.Address;
 import com.ganjj.entities.User;
+import com.ganjj.exception.ConflictException;
+import com.ganjj.exception.ErrorCode;
+import com.ganjj.exception.ResourceNotFoundException;
 import com.ganjj.repository.AddressRepository;
 import com.ganjj.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +29,7 @@ public class AddressService {
     @Transactional
     public AddressResponseDTO createAddress(AddressCreateDTO createDTO) {
         User user = userRepository.findById(createDTO.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + createDTO.getUserId()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND));
 
         Address address = new Address();
         address.setUser(user);
@@ -64,7 +66,7 @@ public class AddressService {
     @Transactional(readOnly = true)
     public List<AddressResponseDTO> getUserAddresses(Long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new EntityNotFoundException("Usuário não encontrado com o ID: " + userId);
+            throw new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND);
         }
         return addressRepository.findByUserIdOrderByIsDefaultDescCreatedAtDesc(userId).stream()
                 .map(AddressResponseDTO::new)
@@ -74,7 +76,7 @@ public class AddressService {
     @Transactional(readOnly = true)
     public AddressResponseDTO getAddressById(Long id) {
         Address address = addressRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ADDRESS_NOT_FOUND));
         return new AddressResponseDTO(address);
     }
 
@@ -87,20 +89,20 @@ public class AddressService {
 
     public void validateAddressOwnership(Long addressId, Long userId) {
         Address address = addressRepository.findById(addressId)
-                .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + addressId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ADDRESS_NOT_FOUND));
         
         if (!address.getUser().getId().equals(userId)) {
-            throw new SecurityException("Você não tem permissão para acessar este endereço.");
+            throw new com.ganjj.exception.AccessDeniedException(ErrorCode.ADDRESS_ACCESS_DENIED);
         }
     }
 
     @Transactional
     public AddressResponseDTO updateAddress(Long id, AddressUpdateDTO updateDTO) {
         Address address = addressRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ADDRESS_NOT_FOUND));
 
         if (!address.getActive()) {
-            throw new IllegalStateException("Não é possível editar um endereço inativo.");
+            throw new ConflictException(ErrorCode.ADDRESS_CANNOT_EDIT_INACTIVE);
         }
 
         if (updateDTO.getRecipientName() != null) {
@@ -162,7 +164,7 @@ public class AddressService {
     @Transactional
     public AddressResponseDTO setAsDefault(Long id) {
         Address address = addressRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ADDRESS_NOT_FOUND));
 
         List<Address> userAddresses = addressRepository.findByUserId(address.getUser().getId());
         userAddresses.forEach(addr -> {
@@ -178,12 +180,12 @@ public class AddressService {
     @Transactional
     public void deleteAddress(Long id) {
         Address address = addressRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Endereço não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ADDRESS_NOT_FOUND));
 
         List<Address> userAddresses = addressRepository.findByUserIdAndActiveTrue(address.getUser().getId());
         
         if (userAddresses.size() == 1 && userAddresses.get(0).getId().equals(id)) {
-            throw new IllegalStateException("Não é possível excluir o único endereço ativo do usuário.");
+            throw new ConflictException(ErrorCode.ADDRESS_CANNOT_DELETE_LAST_ACTIVE);
         }
 
         if (address.getIsDefault()) {
