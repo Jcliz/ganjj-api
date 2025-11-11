@@ -18,6 +18,4 @@ public class OrderCreateDTO {
 
     @NotNull(message = "O método de pagamento é obrigatório.")
     private Order.PaymentMethod paymentMethod;
-
-    private String notes;
 }

@@ -79,16 +79,7 @@ public class OrderService {
         Order order = new Order();
         order.setUser(user);
         order.setPaymentMethod(createDTO.getPaymentMethod());
-        order.setNotes(createDTO.getNotes());
         order.setDeliveryAddress(address);
-
-        order.setDeliveryStreet(address.getStreet());
-        order.setDeliveryNumber(address.getNumber());
-        order.setDeliveryComplement(address.getComplement());
-        order.setDeliveryNeighborhood(address.getNeighborhood());
-        order.setDeliveryCity(address.getCity());
-        order.setDeliveryState(address.getState());
-        order.setDeliveryZipCode(address.getZipCode());
 
         for (ShoppingBagItem bagItem : shoppingBag.getItems()) {
             Product product = productRepository.findById(Long.parseLong(bagItem.getProductId()))
@@ -154,16 +145,7 @@ public class OrderService {
             order.setStatus(updateDTO.getOrderStatus());
 
             switch (updateDTO.getOrderStatus()) {
-                case CONFIRMED:
-                    break;
-                case SHIPPED:
-                    order.setShippedDate(LocalDateTime.now());
-                    break;
-                case DELIVERED:
-                    order.setDeliveredDate(LocalDateTime.now());
-                    break;
                 case CANCELLED:
-                    order.setCancelledDate(LocalDateTime.now());
                     returnStockOnCancellation(order);
                     break;
                 default:
@@ -173,9 +155,6 @@ public class OrderService {
 
         if (updateDTO.getPaymentStatus() != null) {
             order.setPaymentStatus(updateDTO.getPaymentStatus());
-            if (updateDTO.getPaymentStatus() == Order.PaymentStatus.PAID) {
-                order.setPaymentDate(LocalDateTime.now());
-            }
         }
 
         Order updatedOrder = orderRepository.save(order);

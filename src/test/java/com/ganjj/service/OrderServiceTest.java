@@ -84,7 +84,6 @@ class OrderServiceTest {
         createDTO.setShoppingBagId(1L);
         createDTO.setAddressId(1L);
         createDTO.setPaymentMethod(Order.PaymentMethod.CREDIT_CARD);
-        createDTO.setNotes("Test order");
 
         User user = createMockUser(1L, "test@example.com");
         Address address = createMockAddress(1L, user);

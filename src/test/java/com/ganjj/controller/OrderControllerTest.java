@@ -47,7 +47,6 @@ public class OrderControllerTest {
         createDTO.setShoppingBagId(1L);
         createDTO.setAddressId(1L);
         createDTO.setPaymentMethod(Order.PaymentMethod.CREDIT_CARD);
-        createDTO.setNotes("Entrega urgente");
 
         Order order = createMockOrder(1L, 1L, Order.OrderStatus.PENDING, new BigDecimal("299.98"));
         OrderResponseDTO responseDTO = new OrderResponseDTO(order);

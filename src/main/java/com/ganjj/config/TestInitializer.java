@@ -232,14 +232,6 @@ public class TestInitializer {
                 order.setPaymentMethod(Order.PaymentMethod.CREDIT_CARD);
                 order.setPaymentStatus(Order.PaymentStatus.PAID);
                 order.setStatus(Order.OrderStatus.CONFIRMED);
-                
-                order.setDeliveryStreet(addressUser1.getStreet());
-                order.setDeliveryNumber(addressUser1.getNumber());
-                order.setDeliveryComplement(addressUser1.getComplement());
-                order.setDeliveryNeighborhood(addressUser1.getNeighborhood());
-                order.setDeliveryCity(addressUser1.getCity());
-                order.setDeliveryState(addressUser1.getState());
-                order.setDeliveryZipCode(addressUser1.getZipCode());
 
                 OrderItem orderItem = new OrderItem();
                 orderItem.setProduct(tenis);

@@ -34,24 +34,8 @@ public class Order {
     @Column(nullable = false)
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
-    private String deliveryStreet;
-    private String deliveryNumber;
-    private String deliveryComplement;
-    private String deliveryNeighborhood;
-    private String deliveryCity;
-    private String deliveryState;
-    private String deliveryZipCode;
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime orderDate;
-
-    private LocalDateTime paymentDate;
-    private LocalDateTime shippedDate;
-    private LocalDateTime deliveredDate;
-    private LocalDateTime cancelledDate;
-
-    private String trackingCode;
-    private String notes;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
