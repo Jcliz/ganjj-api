@@ -59,16 +59,15 @@ public class TestInitializer {
 
                 regularUser = new User();
                 regularUser.setName("João Silva");
-                regularUser.setEmail("joao@email.com");
+                regularUser.setEmail("cliente@ganjj.com");
                 regularUser.setPassword(passwordEncoder.encode("cliente123"));
                 regularUser.setRole(User.UserRole.USER);
                 regularUser.setPhone("(11) 91234-5678");
                 regularUser = userRepository.save(regularUser);
 
-                System.out.println("  → 2 usuários criados");
             } else {
                 adminUser = userRepository.findByEmail("admin@ganjj.com").orElse(null);
-                regularUser = userRepository.findByEmail("joao@email.com").orElse(null);
+                regularUser = userRepository.findByEmail("cliente@ganjj.com").orElse(null);
             }
 
             Address addressAdmin = null;
