@@ -2,13 +2,9 @@ package com.ganjj.security;
 
 import com.ganjj.dto.JwtResponseDTO;
 import com.ganjj.dto.LoginRequestDTO;
-import com.ganjj.dto.TokenRefreshRequestDTO;
-import com.ganjj.dto.TokenRefreshResponseDTO;
 import com.ganjj.security.jwt.JwtUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -56,27 +52,5 @@ public class AuthController {
                 userDetails.getEmail(),
                 roles.get(0).replace("ROLE_", ""),
                 roles));
-    }
-
-    @PostMapping("/refresh-token")
-    public ResponseEntity<?> refreshToken(@Valid @RequestBody TokenRefreshRequestDTO request) {
-        String requestRefreshToken = request.getRefreshToken();
-
-        if (!jwtUtils.validateJwtToken(requestRefreshToken)) {
-            return ResponseEntity.badRequest().body("Error: Invalid refresh token!");
-        }
-        
-        Long userId = jwtUtils.getUserIdFromJwtToken(requestRefreshToken);
-        String newToken = jwtUtils.generateTokenFromUserId(userId);
-        
-        return ResponseEntity.ok(new TokenRefreshResponseDTO(newToken, requestRefreshToken, "Bearer"));
-    }
-    
-    @PostMapping("/logout")
-    public ResponseEntity<?> logoutUser() {
-        ResponseCookie cookie = jwtUtils.getCleanJwtCookie();
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body("Logout realizado com sucesso!");
     }
 }
