@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.GrantedAuthority;
+
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,9 +31,19 @@ public class AdminAuthorizationFilter implements Filter {
         String method = httpRequest.getMethod();
         
         if (isAdminProtectedRoute(path, method)) {
-            String adminHeader = httpRequest.getHeader("X-Admin-Role");
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             
-            if (adminHeader == null || !adminHeader.equals("ADMIN")) {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                httpResponse.getWriter().write("Não autenticado");
+                return;
+            }
+            
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .anyMatch(role -> role.equals("ROLE_ADMIN"));
+            
+            if (!isAdmin) {
                 httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 httpResponse.getWriter().write("Acesso negado: Privilégios de administrador necessários");
                 return;
