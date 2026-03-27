@@ -4,13 +4,14 @@ CREATE TABLE usuario (
     email VARCHAR(255) UNIQUE NOT NULL,
     senha VARCHAR(255) NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE,
+    status BOOLEAN DEFAULT TRUE,
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE produto (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
-    descrição TEXT,
+    descricao TEXT,
     preco NUMERIC(10, 2) NOT NULL,
     estoque INTEGER NOT NULL,
     imagem_url VARCHAR(255),
@@ -57,7 +58,7 @@ CREATE TABLE contato_cliente (
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE lojas (
+CREATE TABLE loja (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
     endereco TEXT NOT NULL,
