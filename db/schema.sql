@@ -14,6 +14,8 @@ CREATE TABLE produto (
     descricao TEXT,
     preco NUMERIC(10, 2) NOT NULL,
     estoque INTEGER NOT NULL,
+    cor VARCHAR(50),
+    status BOOLEAN DEFAULT TRUE,
     imagem_url VARCHAR(255),
     popular BOOLEAN DEFAULT FALSE,
     feminino BOOLEAN DEFAULT FALSE,

@@ -21,7 +21,9 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 const clienteRoutes = require('./src/routes/clienteRoutes');
+const produtoRoutes = require('./src/routes/produtoRoutes');
 app.use('/api/clientes', clienteRoutes);
+app.use('/api/produtos', produtoRoutes);
 
 app.listen(port, () => {
     console.log(`GANJJ API listening at http://localhost:${port}`);
