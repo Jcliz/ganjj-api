@@ -5,7 +5,6 @@ const port = process.env.PORT;
 const express = require('express');
 const app = express();
 
-//CORS
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -20,10 +19,13 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-const clienteRoutes = require('./src/routes/clienteRoutes');
-const produtoRoutes = require('./src/routes/produtoRoutes');
-app.use('/api/clientes', clienteRoutes);
-app.use('/api/produtos', produtoRoutes);
+const clienteRoutes   = require('./src/routes/clienteRoutes');
+const produtoRoutes   = require('./src/routes/produtoRoutes');
+const dashboardRoutes = require('./src/routes/dashboardRoutes');
+
+app.use('/api/clientes',  clienteRoutes);
+app.use('/api/produtos',  produtoRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.listen(port, () => {
     console.log(`GANJJ API listening at http://localhost:${port}`);
