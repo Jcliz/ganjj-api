@@ -2,7 +2,8 @@ require('dotenv').config()
 
 const port = process.env.PORT;
 
-const express = require('express');
+const express    = require('express');
+const cookieParser = require('cookie-parser');
 const app = express();
 
 app.use((req, res, next) => {
@@ -18,12 +19,17 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+app.use(cookieParser());
 
+const authRoutes      = require('./src/routes/authRoutes');
 const clienteRoutes   = require('./src/routes/clienteRoutes');
 const produtoRoutes   = require('./src/routes/produtoRoutes');
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const pedidoRoutes    = require('./src/routes/pedidoRoutes');
 
+app.use('/api/auth',      authRoutes);
+
+//rotas protegidas — descomente verificarAutenticacao em cada arquivo de rota
 app.use('/api/clientes',  clienteRoutes);
 app.use('/api/produtos',  produtoRoutes);
 app.use('/api/dashboard', dashboardRoutes);
