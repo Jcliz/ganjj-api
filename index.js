@@ -5,7 +5,6 @@ const appUrl = process.env.APP_URL || 'http://localhost:5173';
 
 const express    = require('express');
 const cookieParser = require('cookie-parser');
-const cookieParser = require('cookie-parser');
 const app = express();
 
 app.use((req, res, next) => {

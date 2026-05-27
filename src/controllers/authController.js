@@ -9,9 +9,10 @@ const {
 } = require('../config/jwt');
 
 async function login(req, res) {
-    const { email, senha } = req.body;
+    const { email, senha, password } = req.body;
+    const senhaRecebida = senha || password;
 
-    if (!email || !senha) {
+    if (!email || !senhaRecebida) {
         return res.status(400).json({ error: 'Email e senha são obrigatórios' });
     }
 
@@ -32,7 +33,7 @@ async function login(req, res) {
 
         // TODO: quando o fluxo de cadastro com senha estiver pronto,
         // substitua a linha abaixo por: await bcrypt.compare(senha, usuario.senha)
-        const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
+        const senhaCorreta = await bcrypt.compare(senhaRecebida, usuario.senha);
         if (!senhaCorreta) {
             return res.status(401).json({ error: 'Credenciais inválidas' });
         }
@@ -51,7 +52,7 @@ async function login(req, res) {
 
         return res.json({
             message: 'Login realizado com sucesso',
-            usuario: { id: usuario.id, email: usuario.email, isAdmin: usuario.is_admin },
+            usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, is_admin: usuario.is_admin },
         });
     } finally {
         conn.release();
@@ -89,4 +90,23 @@ function refresh(req, res) {
     }
 }
 
-module.exports = { login, logout, refresh };
+async function me(req, res) {
+    if (!req.usuario) {
+        return res.status(401).json({ error: 'Não autenticado' });
+    }
+    const conn = await db.connect();
+    try {
+        const result = await conn.query(
+            'SELECT id, nome, email, is_admin, criado_em FROM usuario WHERE id = $1',
+            [req.usuario.id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+        return res.json({ usuario: result.rows[0] });
+    } finally {
+        conn.release();
+    }
+}
+
+module.exports = { login, logout, refresh, me };
