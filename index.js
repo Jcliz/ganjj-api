@@ -3,6 +3,9 @@ require('dotenv').config();
 const port = process.env.PORT;
 const appUrl = process.env.APP_URL || 'http://localhost:5173';
 
+const { runSetup } = require('./db/setup');
+runSetup().catch(err => console.error('Erro no DB setup:', err));
+
 const express    = require('express');
 const cookieParser = require('cookie-parser');
 const app = express();
@@ -29,6 +32,7 @@ const clienteRoutes   = require('./src/routes/clienteRoutes');
 const produtoRoutes   = require('./src/routes/produtoRoutes');
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const pedidoRoutes    = require('./src/routes/pedidoRoutes');
+const cestaRoutes     = require('./src/routes/cestaRoutes');
 
 app.use('/api/auth',      authRoutes);
 
@@ -37,6 +41,7 @@ app.use('/api/clientes',  clienteRoutes);
 app.use('/api/produtos',  produtoRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/pedidos',   pedidoRoutes);
+app.use('/api/cesta',     cestaRoutes);
 
 app.listen(port, () => {
     console.log(`GANJJ API listening at http://localhost:${port}`);
