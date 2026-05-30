@@ -199,12 +199,12 @@ async function updateCliente(req, res) {
             values.push(email);
         }
 
-        if (isAdmin !== undefined) {
+        if (role !== undefined) {
             updates.push(`is_admin = $${index++}`);
             values.push(isAdmin);
         }
 
-        if (statusBoolean !== undefined) {
+        if (status !== undefined) {
             updates.push(`status = $${index++}`);
             values.push(statusBoolean);
         }
