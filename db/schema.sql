@@ -33,7 +33,8 @@ CREATE TABLE carrinho_itens (
     carrinho_id INTEGER REFERENCES carrinho(id),
     produto_id INTEGER REFERENCES produto(id),
     quantidade INTEGER NOT NULL,
-    UNIQUE(carrinho_id, produto_id)
+    tamanho VARCHAR(20),
+    UNIQUE(carrinho_id, produto_id, tamanho)
 );
 
 CREATE TABLE compra (
@@ -49,7 +50,8 @@ CREATE TABLE compra_itens (
     compra_id INTEGER REFERENCES compra(id),
     produto_id INTEGER REFERENCES produto(id),
     quantidade INTEGER NOT NULL,
-    preco NUMERIC(10, 2) NOT NULL
+    preco NUMERIC(10, 2) NOT NULL,
+    tamanho VARCHAR(20)
 );
 
 CREATE TABLE contato_cliente (
