@@ -3,6 +3,8 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const { verificarAutenticacao } = require('../middleware/authMiddleware');
 
+router.post('/register', authController.register);
+
 //gera accessToken + refreshToken (cookies httpOnly)
 router.post('/login', authController.login);
 

@@ -90,6 +90,40 @@ function refresh(req, res) {
     }
 }
 
+async function register(req, res) {
+    const { firstName, lastName, email, password } = req.body;
+
+    if (!firstName || !lastName || !email || !password) {
+        return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
+    }
+
+    const nome = `${firstName} ${lastName}`;
+    const senhaHash = await bcrypt.hash(password, 10);
+
+    const conn = await db.connect();
+    try {
+        const existing = await conn.query('SELECT id FROM usuario WHERE email = $1', [email]);
+        if (existing.rows.length > 0) {
+            return res.status(409).json({ error: 'E-mail já cadastrado' });
+        }
+
+        const result = await conn.query(
+            'INSERT INTO usuario (nome, email, senha) VALUES ($1, $2, $3) RETURNING id, nome, email, is_admin, criado_em',
+            [nome, email, senhaHash]
+        );
+
+        const usuario = result.rows[0];
+        const payload = { id: usuario.id, email: usuario.email, isAdmin: usuario.is_admin };
+
+        res.cookie('accessToken',  gerarToken(payload),        cookieOptions);
+        res.cookie('refreshToken', gerarRefreshToken(payload), refreshCookieOptions);
+
+        return res.status(201).json({ message: 'Cadastro realizado com sucesso', usuario });
+    } finally {
+        conn.release();
+    }
+}
+
 async function me(req, res) {
     if (!req.usuario) {
         return res.status(401).json({ error: 'Não autenticado' });
@@ -109,4 +143,4 @@ async function me(req, res) {
     }
 }
 
-module.exports = { login, logout, refresh, me };
+module.exports = { login, register, logout, refresh, me };
