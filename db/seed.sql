@@ -87,6 +87,18 @@ INSERT INTO compra_itens (compra_id, produto_id, quantidade, preco, tamanho) VAL
 (8, 7, 1, 89.90, 'M'),
 (8, 11, 2, 25.90, 'Único');
 
+-- Inserir produtos em sale
+-- produto_id | desconto_pct | categoria
+INSERT INTO sale (produto_id, desconto_pct, categoria, ativo) VALUES
+(1,  30, 'Superiores', TRUE),  -- Camiseta Básica Branca   49.90 → 34.93
+(2,  25, 'Superiores', TRUE),  -- Camiseta Básica Preta    49.90 → 37.43
+(4,  35, 'Inferiores', TRUE),  -- Calça Jeans Premium     129.90 → 84.44
+(5,  40, 'Superiores', TRUE),  -- Vestido Floral          159.90 → 95.94
+(6,  40, 'Inverno',    TRUE),  -- Jaqueta Jeans           199.90 → 119.94
+(7,  30, 'Inferiores', TRUE),  -- Shorts Jeans             89.90 → 62.93
+(8,  25, 'Superiores', TRUE),  -- Blusa Social            119.90 → 89.93
+(10, 30, 'Superiores', TRUE);  -- Polo Masculina           99.90 → 69.93
+
 -- Inserir contatos de clientes
 INSERT INTO contato_cliente (nome, email, mensagem) VALUES
 ('João Silva', 'joao@example.com', 'Gostaria de saber sobre a política de trocas'),

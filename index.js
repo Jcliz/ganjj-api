@@ -33,6 +33,7 @@ const produtoRoutes   = require('./src/routes/produtoRoutes');
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const pedidoRoutes    = require('./src/routes/pedidoRoutes');
 const cestaRoutes     = require('./src/routes/cestaRoutes');
+const saleRoutes      = require('./src/routes/saleRoutes');
 
 app.use('/api/auth',      authRoutes);
 
@@ -42,6 +43,7 @@ app.use('/api/produtos',  produtoRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/pedidos',   pedidoRoutes);
 app.use('/api/cesta',     cestaRoutes);
+app.use('/api/sale',      saleRoutes);
 
 app.listen(port, () => {
     console.log(`GANJJ API listening at http://localhost:${port}`);

@@ -69,3 +69,13 @@ CREATE TABLE loja (
     telefone VARCHAR(50),
     horas_abertura VARCHAR(255)
 );
+
+CREATE TABLE sale (
+    id SERIAL PRIMARY KEY,
+    produto_id INTEGER NOT NULL REFERENCES produto(id) ON DELETE CASCADE,
+    desconto_pct INTEGER NOT NULL CHECK (desconto_pct > 0 AND desconto_pct <= 100),
+    categoria VARCHAR(50) NOT NULL CHECK (categoria IN ('Superiores', 'Inferiores', 'Inverno')),
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(produto_id)
+);

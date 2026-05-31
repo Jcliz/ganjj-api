@@ -1,7 +1,8 @@
 const db = require('../../db/db');
 
 async function createPedido(req, res) {
-  const { usuario_id, itens } = req.body;
+  const usuario_id = req.usuario.id;
+  const { itens } = req.body;
 
   if (!Array.isArray(itens) || itens.length === 0) {
     return res.status(400).json({ error: 'Itens do pedido são obrigatórios' });
@@ -43,7 +44,7 @@ async function createPedido(req, res) {
       `INSERT INTO compra (usuario_id, total, status)
        VALUES ($1, $2, 'pending')
        RETURNING id, status, total, criado_em`,
-      [usuario_id ?? null, total.toFixed(2)]
+      [usuario_id, total.toFixed(2)]
     );
 
     const compra = compraResult.rows[0];

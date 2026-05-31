@@ -60,7 +60,10 @@ function mapProdutoResponse(row) {
         imagem_url: row.imagem_url,
         popular: row.popular,
         feminino: row.feminino,
-        criado_em: row.criado_em
+        criado_em: row.criado_em,
+        em_sale: row.em_sale ?? false,
+        desconto_pct: row.desconto_pct ?? null,
+        preco_sale: row.preco_sale ? Number(row.preco_sale) : null,
     };
 }
 
@@ -142,7 +145,18 @@ async function getProdutos(req, res) {
     try {
         const conn = await db.connect();
         try {
-            const result = await conn.query('SELECT * FROM produto ORDER BY criado_em DESC');
+            const result = await conn.query(`
+                SELECT p.*,
+                       s.desconto_pct,
+                       (s.id IS NOT NULL) AS em_sale,
+                       CASE WHEN s.id IS NOT NULL
+                            THEN ROUND(p.preco * (1 - s.desconto_pct::numeric / 100), 2)
+                            ELSE NULL
+                       END AS preco_sale
+                FROM produto p
+                LEFT JOIN sale s ON s.produto_id = p.id AND s.ativo = TRUE
+                ORDER BY p.criado_em DESC
+            `);
             res.json(result.rows.map(mapProdutoResponse));
         } finally {
             conn.release();
@@ -159,7 +173,18 @@ async function getProdutoById(req, res) {
 
         const conn = await db.connect();
         try {
-            const result = await conn.query('SELECT * FROM produto WHERE id = $1', [id]);
+            const result = await conn.query(`
+                SELECT p.*,
+                       s.desconto_pct,
+                       (s.id IS NOT NULL) AS em_sale,
+                       CASE WHEN s.id IS NOT NULL
+                            THEN ROUND(p.preco * (1 - s.desconto_pct::numeric / 100), 2)
+                            ELSE NULL
+                       END AS preco_sale
+                FROM produto p
+                LEFT JOIN sale s ON s.produto_id = p.id AND s.ativo = TRUE
+                WHERE p.id = $1
+            `, [id]);
 
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: 'Produto não encontrado' });

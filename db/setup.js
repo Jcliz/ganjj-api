@@ -21,7 +21,18 @@ async function runSetup() {
         UNIQUE(cesta_id, produto_id)
       )
     `);
-    console.log('DB setup: tabelas de cesta verificadas.');
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS sale (
+        id         SERIAL PRIMARY KEY,
+        produto_id INTEGER NOT NULL REFERENCES produto(id) ON DELETE CASCADE,
+        desconto_pct INTEGER NOT NULL CHECK (desconto_pct > 0 AND desconto_pct <= 100),
+        categoria  VARCHAR(50) NOT NULL CHECK (categoria IN ('Superiores', 'Inferiores', 'Inverno')),
+        ativo      BOOLEAN NOT NULL DEFAULT TRUE,
+        criado_em  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(produto_id)
+      )
+    `);
+    console.log('DB setup: tabelas verificadas (cesta + sale).');
   } finally {
     conn.release();
   }
