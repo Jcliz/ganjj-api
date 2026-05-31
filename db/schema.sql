@@ -8,18 +8,32 @@ CREATE TABLE usuario (
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE tipo_roupa (
+    id   SERIAL PRIMARY KEY,
+    nome VARCHAR(50) UNIQUE NOT NULL
+);
+
 CREATE TABLE produto (
-    id SERIAL PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    descricao TEXT,
-    preco NUMERIC(10, 2) NOT NULL,
-    estoque INTEGER NOT NULL,
-    cor VARCHAR(50),
-    status BOOLEAN DEFAULT TRUE,
-    imagem_url VARCHAR(255),
-    popular BOOLEAN DEFAULT FALSE,
-    feminino BOOLEAN DEFAULT FALSE,
-    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    id            SERIAL PRIMARY KEY,
+    nome          VARCHAR(255) NOT NULL,
+    descricao     TEXT,
+    preco         NUMERIC(10, 2) NOT NULL,
+    estoque       INTEGER NOT NULL,
+    cor           VARCHAR(50),
+    status        BOOLEAN DEFAULT TRUE,
+    imagem_url    VARCHAR(255),
+    popular       BOOLEAN DEFAULT FALSE,
+    feminino      BOOLEAN DEFAULT FALSE,
+    novo          BOOLEAN DEFAULT TRUE,
+    social        BOOLEAN DEFAULT FALSE,
+    tipo_roupa_id INTEGER REFERENCES tipo_roupa(id),
+    criado_em     TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE produto_tamanhos (
+    produto_id INTEGER NOT NULL REFERENCES produto(id) ON DELETE CASCADE,
+    tamanho    VARCHAR(20) NOT NULL,
+    PRIMARY KEY (produto_id, tamanho)
 );
 
 CREATE TABLE carrinho (
