@@ -6,8 +6,10 @@ const appUrl = process.env.APP_URL || 'http://localhost:5173';
 const { runSetup } = require('./db/setup');
 runSetup().catch(err => console.error('Erro no DB setup:', err));
 
-const express    = require('express');
+const express      = require('express');
 const cookieParser = require('cookie-parser');
+const { apiReference } = require('@scalar/express-api-reference');
+const openApiSpec      = require('./src/docs/openapi');
 const app = express();
 
 app.use((req, res, next) => {
@@ -33,6 +35,12 @@ const produtoRoutes   = require('./src/routes/produtoRoutes');
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const pedidoRoutes    = require('./src/routes/pedidoRoutes');
 const cestaRoutes     = require('./src/routes/cestaRoutes');
+
+app.get('/api/docs.json', (req, res) => res.json(openApiSpec));
+app.use('/api/docs', apiReference({
+    spec: { content: openApiSpec },
+    theme: 'purple',
+}));
 
 app.use('/api/auth',      authRoutes);
 

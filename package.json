@@ -16,6 +16,7 @@
     "jest": "^29.7.0"
   },
   "dependencies": {
+    "@scalar/express-api-reference": "^0.9.19",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.3.1",
