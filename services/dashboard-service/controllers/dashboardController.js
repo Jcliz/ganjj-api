@@ -3,7 +3,9 @@ const db = require('../../shared/db');
 const MESES_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 const STATUS_MAP = {
-  delivered:  { label: 'Entregue',        color: '#2a7a3b' },
+  completed:  { label: 'Concluído',        color: '#2a7a3b' },
+  delivered:  { label: 'Entregue',         color: '#2a7a3b' },
+  shipping:   { label: 'Frete',            color: '#4a7ab5' },
   shipped:    { label: 'Enviado',          color: '#4a7ab5' },
   pending:    { label: 'Em processamento', color: '#f5a623' },
   processing: { label: 'Em processamento', color: '#f5a623' },
