@@ -108,4 +108,116 @@ async function getPedido(req, res) {
   }
 }
 
-module.exports = { createPedido, getPedido };
+function formatarPedido(compra, itens) {
+  return {
+    id: compra.id,
+    codigo: `#GNJ-${String(compra.id).padStart(5, '0')}`,
+    status: compra.status,
+    passo_atual: compra.passo_atual ?? 0,
+    total: parseFloat(compra.total),
+    endereco_entrega: compra.endereco_entrega,
+    numero_rastreio: compra.numero_rastreio,
+    criado_em: compra.criado_em,
+    itens: itens.map(r => ({
+      nome: r.nome,
+      tamanho: r.tamanho,
+      quantidade: r.quantidade,
+      preco: parseFloat(r.preco),
+    })),
+  };
+}
+
+async function buscarItens(conn, compra_id) {
+  const result = await conn.query(
+    `SELECT ci.quantidade, ci.preco, ci.tamanho, p.nome
+     FROM compra_itens ci JOIN produto p ON ci.produto_id = p.id WHERE ci.compra_id = $1`,
+    [compra_id]
+  );
+  return result.rows;
+}
+
+async function listarMeusPedidos(req, res) {
+  const usuario_id = req.usuario.id;
+  const conn = await db.connect();
+  try {
+    const result = await conn.query(
+      `SELECT id, total, status, passo_atual, endereco_entrega, numero_rastreio, criado_em
+       FROM compra WHERE usuario_id = $1 ORDER BY criado_em DESC`,
+      [usuario_id]
+    );
+
+    const pedidos = [];
+    for (const compra of result.rows) {
+      const itens = await buscarItens(conn, compra.id);
+      pedidos.push(formatarPedido(compra, itens));
+    }
+
+    res.json(pedidos);
+  } catch (error) {
+    console.error('Erro ao listar pedidos do usuário:', error);
+    res.status(500).json({ error: 'Erro ao listar pedidos' });
+  } finally {
+    conn.release();
+  }
+}
+
+async function listarTodosPedidos(req, res) {
+  const conn = await db.connect();
+  try {
+    const result = await conn.query(
+      `SELECT c.id, c.total, c.status, c.passo_atual, c.endereco_entrega, c.numero_rastreio, c.criado_em,
+              u.nome AS cliente_nome, u.email AS cliente_email
+       FROM compra c LEFT JOIN usuario u ON c.usuario_id = u.id ORDER BY c.criado_em DESC`
+    );
+
+    const pedidos = [];
+    for (const compra of result.rows) {
+      const itens = await buscarItens(conn, compra.id);
+      pedidos.push({
+        ...formatarPedido(compra, itens),
+        cliente_nome: compra.cliente_nome,
+        cliente_email: compra.cliente_email,
+      });
+    }
+
+    res.json(pedidos);
+  } catch (error) {
+    console.error('Erro ao listar todos os pedidos:', error);
+    res.status(500).json({ error: 'Erro ao listar pedidos' });
+  } finally {
+    conn.release();
+  }
+}
+
+function passoParaStatus(passo) {
+  if (passo <= 2) return 'pending';
+  if (passo <= 4) return 'shipping';
+  return 'completed';
+}
+
+async function atualizarPasso(req, res) {
+  const { id } = req.params;
+  const { passo } = req.body;
+
+  if (passo == null || typeof passo !== 'number' || passo < 0 || passo > 5) {
+    return res.status(400).json({ error: 'passo deve ser um número entre 0 e 5' });
+  }
+
+  const novoStatus = passoParaStatus(passo);
+  const conn = await db.connect();
+  try {
+    const result = await conn.query(
+      `UPDATE compra SET passo_atual = $1, status = $2 WHERE id = $3 RETURNING id, passo_atual, status`,
+      [passo, novoStatus, id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido não encontrado' });
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erro ao atualizar passo do pedido:', error);
+    res.status(500).json({ error: 'Erro ao atualizar passo' });
+  } finally {
+    conn.release();
+  }
+}
+
+module.exports = { createPedido, getPedido, listarMeusPedidos, listarTodosPedidos, atualizarPasso };

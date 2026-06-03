@@ -56,6 +56,9 @@ CREATE TABLE compra (
     usuario_id INTEGER REFERENCES usuario(id),
     total NUMERIC(10, 2) NOT NULL,
     status VARCHAR(50) DEFAULT 'pending',
+    passo_atual INTEGER DEFAULT 0,
+    endereco_entrega TEXT,
+    numero_rastreio VARCHAR(100),
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

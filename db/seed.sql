@@ -6,7 +6,7 @@
 
 -- Limpar dados (descomente se quiser resetar tudo)
 -- TRUNCATE TABLE compra_itens, carrinho_itens, compra, carrinho,
---               produto_tamanhos, sale, cesta_itens, cesta,
+--               produto_tamanhos, sale,
 --               produto, tipo_roupa, usuario,
 --               contato_cliente, loja
 -- RESTART IDENTITY CASCADE;
@@ -266,13 +266,14 @@ JOIN produto  p ON p.nome = v.nome_produto
 ON CONFLICT DO NOTHING;
 
 -- ─── Compras ─────────────────────────────────────────────────
-INSERT INTO compra (usuario_id, total, status) VALUES
-  (2, 379.80, 'completed'),
-  (3, 559.70, 'completed'),
-  (2, 299.90, 'pending'),
-  (4, 499.70, 'completed'),
-  (5, 469.80, 'shipping'),
-  (6, 748.70, 'completed');
+-- passo_atual: 0-2=pending(Em processamento) | 3-4=shipping(Frete) | 5=completed(Concluído)
+INSERT INTO compra (usuario_id, total, status, passo_atual, endereco_entrega, numero_rastreio) VALUES
+  (2, 379.80, 'completed', 5, 'Rua das Flores, 123 - São Paulo, SP 01310-100',       'BR123456789SP'),
+  (3, 559.70, 'completed', 5, 'Av. Atlântica, 500 - Rio de Janeiro, RJ 22070-000',   'BR987654321RJ'),
+  (2, 299.90, 'pending',   1, 'Rua das Flores, 123 - São Paulo, SP 01310-100',        NULL),
+  (4, 499.70, 'completed', 5, 'Av. do Contorno, 800 - Belo Horizonte, MG 30110-090', 'BR456123789MG'),
+  (5, 469.80, 'shipping',  4, 'Rua XV de Novembro, 200 - Curitiba, PR 80020-310',    'BR741852963PR'),
+  (6, 748.70, 'completed', 5, 'Av. Boa Viagem, 1000 - Recife, PE 51030-000',         'BR321654987PE');
 
 INSERT INTO compra_itens (compra_id, produto_id, quantidade, preco, tamanho)
 SELECT ci.compra_id, p.id, ci.qty, p.preco, ci.tam

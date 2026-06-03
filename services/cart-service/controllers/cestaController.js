@@ -1,19 +1,29 @@
 const db = require('../../shared/db');
 const productClient = require('../http/productClient');
 
+async function getOrCreateCarrinho(conn, usuarioId) {
+  const result = await conn.query('SELECT id FROM carrinho WHERE usuario_id = $1', [usuarioId]);
+  if (result.rows.length > 0) return result.rows[0].id;
+  const inserted = await conn.query(
+    'INSERT INTO carrinho (usuario_id) VALUES ($1) RETURNING id',
+    [usuarioId]
+  );
+  return inserted.rows[0].id;
+}
+
 async function getCesta(req, res) {
   const usuarioId = req.usuario.id;
   const conn = await db.connect();
   try {
-    const cestaResult = await conn.query('SELECT id FROM cesta WHERE usuario_id = $1', [usuarioId]);
-    if (cestaResult.rows.length === 0) return res.json({ itens: [] });
+    const carrinhoResult = await conn.query('SELECT id FROM carrinho WHERE usuario_id = $1', [usuarioId]);
+    if (carrinhoResult.rows.length === 0) return res.json({ itens: [] });
 
-    const cestaId = cestaResult.rows[0].id;
+    const carrinhoId = carrinhoResult.rows[0].id;
     const itensResult = await conn.query(
       `SELECT ci.id, ci.produto_id, ci.quantidade, p.nome, p.preco, p.cor, p.imagem_url
-       FROM cesta_itens ci JOIN produto p ON ci.produto_id = p.id
-       WHERE ci.cesta_id = $1 ORDER BY ci.added_at`,
-      [cestaId]
+       FROM carrinho_itens ci JOIN produto p ON ci.produto_id = p.id
+       WHERE ci.carrinho_id = $1 ORDER BY ci.id`,
+      [carrinhoId]
     );
 
     res.json({
@@ -38,7 +48,6 @@ async function adicionarItem(req, res) {
     return res.status(400).json({ error: 'produto_id e quantidade são obrigatórios' });
   }
 
-  // Verifica disponibilidade de estoque via product-service (HTTP)
   try {
     const produto = await productClient.checkStock(produto_id);
     if (produto.estoque < quantidade) {
@@ -52,19 +61,24 @@ async function adicionarItem(req, res) {
 
   const conn = await db.connect();
   try {
-    const cestaResult = await conn.query(
-      `INSERT INTO cesta (usuario_id) VALUES ($1)
-       ON CONFLICT (usuario_id) DO UPDATE SET usuario_id = EXCLUDED.usuario_id
-       RETURNING id`,
-      [usuarioId]
-    );
-    const cestaId = cestaResult.rows[0].id;
+    const carrinhoId = await getOrCreateCarrinho(conn, usuarioId);
 
-    await conn.query(
-      `INSERT INTO cesta_itens (cesta_id, produto_id, quantidade) VALUES ($1, $2, $3)
-       ON CONFLICT (cesta_id, produto_id) DO UPDATE SET quantidade = cesta_itens.quantidade + $3`,
-      [cestaId, produto_id, quantidade]
+    const existing = await conn.query(
+      'SELECT id, quantidade FROM carrinho_itens WHERE carrinho_id = $1 AND produto_id = $2',
+      [carrinhoId, produto_id]
     );
+
+    if (existing.rows.length > 0) {
+      await conn.query(
+        'UPDATE carrinho_itens SET quantidade = quantidade + $1 WHERE id = $2',
+        [quantidade, existing.rows[0].id]
+      );
+    } else {
+      await conn.query(
+        'INSERT INTO carrinho_itens (carrinho_id, produto_id, quantidade) VALUES ($1, $2, $3)',
+        [carrinhoId, produto_id, quantidade]
+      );
+    }
 
     res.status(201).json({ message: 'Item adicionado à cesta' });
   } catch (error) {
@@ -86,12 +100,12 @@ async function atualizarItem(req, res) {
 
   const conn = await db.connect();
   try {
-    const cestaResult = await conn.query('SELECT id FROM cesta WHERE usuario_id = $1', [usuarioId]);
-    if (cestaResult.rows.length === 0) return res.status(404).json({ error: 'Cesta não encontrada' });
+    const carrinhoResult = await conn.query('SELECT id FROM carrinho WHERE usuario_id = $1', [usuarioId]);
+    if (carrinhoResult.rows.length === 0) return res.status(404).json({ error: 'Cesta não encontrada' });
 
     const result = await conn.query(
-      'UPDATE cesta_itens SET quantidade = $1 WHERE cesta_id = $2 AND produto_id = $3 RETURNING id',
-      [quantidade, cestaResult.rows[0].id, produto_id]
+      'UPDATE carrinho_itens SET quantidade = $1 WHERE carrinho_id = $2 AND produto_id = $3 RETURNING id',
+      [quantidade, carrinhoResult.rows[0].id, produto_id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Item não encontrado na cesta' });
 
@@ -110,12 +124,12 @@ async function removerItem(req, res) {
 
   const conn = await db.connect();
   try {
-    const cestaResult = await conn.query('SELECT id FROM cesta WHERE usuario_id = $1', [usuarioId]);
-    if (cestaResult.rows.length === 0) return res.status(404).json({ error: 'Cesta não encontrada' });
+    const carrinhoResult = await conn.query('SELECT id FROM carrinho WHERE usuario_id = $1', [usuarioId]);
+    if (carrinhoResult.rows.length === 0) return res.status(404).json({ error: 'Cesta não encontrada' });
 
     await conn.query(
-      'DELETE FROM cesta_itens WHERE cesta_id = $1 AND produto_id = $2',
-      [cestaResult.rows[0].id, produto_id]
+      'DELETE FROM carrinho_itens WHERE carrinho_id = $1 AND produto_id = $2',
+      [carrinhoResult.rows[0].id, produto_id]
     );
     res.json({ message: 'Item removido da cesta' });
   } catch (error) {
@@ -130,7 +144,10 @@ async function limparCesta(req, res) {
   const usuarioId = req.usuario.id;
   const conn = await db.connect();
   try {
-    await conn.query('DELETE FROM cesta WHERE usuario_id = $1', [usuarioId]);
+    const carrinhoResult = await conn.query('SELECT id FROM carrinho WHERE usuario_id = $1', [usuarioId]);
+    if (carrinhoResult.rows.length === 0) return res.json({ message: 'Cesta já está vazia' });
+
+    await conn.query('DELETE FROM carrinho_itens WHERE carrinho_id = $1', [carrinhoResult.rows[0].id]);
     res.json({ message: 'Cesta limpa' });
   } catch (error) {
     console.error('Erro ao limpar cesta:', error);
