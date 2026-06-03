@@ -2,6 +2,8 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const http = require('http');
 const express = require('express');
+const { apiReference } = require('@scalar/express-api-reference');
+const openApiSpec = require('./docs/openapi');
 
 const app = express();
 
@@ -25,6 +27,9 @@ app.use((req, res, next) => {
     if (req.method === 'OPTIONS') return res.status(204).end();
     next();
 });
+
+app.get('/api/docs.json', (req, res) => res.json(openApiSpec));
+app.use('/api/docs', apiReference({ spec: { content: openApiSpec }, theme: 'purple' }));
 
 app.use((req, res) => {
     const route = ROUTES.find(r => req.path.startsWith(r.prefix));

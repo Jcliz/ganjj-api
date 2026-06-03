@@ -9,10 +9,9 @@ const {
 } = require('../../shared/jwt');
 
 async function login(req, res) {
-    const { email, senha, password } = req.body;
-    const senhaRecebida = senha || password;
+    const { email, senha } = req.body;
 
-    if (!email || !senhaRecebida) {
+    if (!email || !senha) {
         return res.status(400).json({ error: 'Email e senha são obrigatórios' });
     }
 
@@ -29,7 +28,7 @@ async function login(req, res) {
 
         const usuario = result.rows[0];
 
-        const senhaCorreta = await bcrypt.compare(senhaRecebida, usuario.senha);
+        const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
         if (!senhaCorreta) {
             return res.status(401).json({ error: 'Credenciais inválidas' });
         }
@@ -48,6 +47,7 @@ async function login(req, res) {
 
         return res.json({
             message: 'Login realizado com sucesso',
+            accessToken,
             usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, is_admin: usuario.is_admin },
         });
     } finally {
@@ -87,14 +87,14 @@ function refresh(req, res) {
 }
 
 async function register(req, res) {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, senha } = req.body;
 
-    if (!firstName || !lastName || !email || !password) {
+    if (!firstName || !lastName || !email || !senha) {
         return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
     }
 
     const nome = `${firstName} ${lastName}`;
-    const senhaHash = await bcrypt.hash(password, 10);
+    const senhaHash = await bcrypt.hash(senha, 10);
 
     const conn = await db.connect();
     try {
@@ -110,11 +110,12 @@ async function register(req, res) {
 
         const usuario = result.rows[0];
         const payload = { id: usuario.id, email: usuario.email, isAdmin: usuario.is_admin };
+        const accessToken = gerarToken(payload);
 
-        res.cookie('accessToken',  gerarToken(payload),        cookieOptions);
+        res.cookie('accessToken',  accessToken,               cookieOptions);
         res.cookie('refreshToken', gerarRefreshToken(payload), refreshCookieOptions);
 
-        return res.status(201).json({ message: 'Cadastro realizado com sucesso', usuario });
+        return res.status(201).json({ message: 'Cadastro realizado com sucesso', accessToken, usuario });
     } finally {
         conn.release();
     }
