@@ -873,6 +873,141 @@ A API utiliza **JWT via cookie HttpOnly**. Após o login ou cadastro, os tokens 
       },
     },
 
+    '/api/pedidos/meus': {
+      get: {
+        tags: ['Pedidos'],
+        summary: 'Listar pedidos do usuário autenticado',
+        description: 'Retorna todos os pedidos realizados pelo usuário logado, ordenados do mais recente para o mais antigo. Inclui o passo atual do rastreio (0–5), endereço de entrega e número de rastreio.',
+        security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Lista de pedidos do usuário',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id:                { type: 'integer', example: 123 },
+                      codigo:            { type: 'string', example: '#GNJ-00123' },
+                      status:            { type: 'string', example: 'pending' },
+                      passo_atual:       { type: 'integer', minimum: 0, maximum: 5, description: '0–2 = em processamento, 3–4 = em transporte, 5 = entregue', example: 2 },
+                      total:             { type: 'number', format: 'float', example: 329.70 },
+                      endereco_entrega:  { type: 'string', nullable: true, example: 'Rua das Flores, 123 — São Paulo, SP' },
+                      numero_rastreio:   { type: 'string', nullable: true, example: 'BR123456789SP' },
+                      criado_em:         { type: 'string', format: 'date-time', example: '2024-05-01T16:45:00.000Z' },
+                      itens: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            nome:       { type: 'string', example: 'Camiseta Oversized Preta' },
+                            quantidade: { type: 'integer', example: 2 },
+                            preco:      { type: 'number', example: 89.90 },
+                            imagem_url: { type: 'string', nullable: true, example: 'https://exemplo.com/img/camiseta-preta.jpg' },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Não autenticado' },
+          500: { description: 'Erro interno do servidor' },
+        },
+      },
+    },
+
+    '/api/pedidos/admin/todos': {
+      get: {
+        tags: ['Pedidos'],
+        summary: 'Listar todos os pedidos (admin)',
+        description: '**Requer admin.** Retorna todos os pedidos do sistema com dados do cliente, ordenados do mais recente para o mais antigo.',
+        security: [{ adminAuth: [] }],
+        responses: {
+          200: {
+            description: 'Lista completa de pedidos',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id:               { type: 'integer', example: 123 },
+                      codigo:           { type: 'string', example: '#GNJ-00123' },
+                      cliente:          { type: 'string', example: 'João Silva' },
+                      email:            { type: 'string', format: 'email', example: 'joao@email.com' },
+                      status:           { type: 'string', example: 'pending' },
+                      passo_atual:      { type: 'integer', minimum: 0, maximum: 5, example: 1 },
+                      total:            { type: 'number', format: 'float', example: 329.70 },
+                      numero_rastreio:  { type: 'string', nullable: true, example: 'BR123456789SP' },
+                      criado_em:        { type: 'string', format: 'date-time', example: '2024-05-01T16:45:00.000Z' },
+                    },
+                  },
+                },
+                example: [
+                  { id: 123, codigo: '#GNJ-00123', cliente: 'João Silva', email: 'joao@email.com', status: 'pending', passo_atual: 1, total: 329.70, numero_rastreio: null, criado_em: '2024-05-01T16:45:00.000Z' },
+                  { id: 122, codigo: '#GNJ-00122', cliente: 'Maria Santos', email: 'maria@email.com', status: 'delivered', passo_atual: 5, total: 89.90, numero_rastreio: 'BR987654321SP', criado_em: '2024-04-28T10:00:00.000Z' },
+                ],
+              },
+            },
+          },
+          401: { description: 'Não autenticado' },
+          403: { description: 'Acesso negado — requer admin' },
+          500: { description: 'Erro interno do servidor' },
+        },
+      },
+    },
+
+    '/api/pedidos/{id}/passo': {
+      put: {
+        tags: ['Pedidos'],
+        summary: 'Atualizar passo do pedido (admin)',
+        description: '**Requer admin.** Avança ou retrocede o passo de rastreio de um pedido. O `passo` deve ser um inteiro de 0 a 5.\n\n| Passo | Significado |\n|---|---|\n| 0–2 | Em processamento |\n| 3–4 | Em transporte |\n| 5 | Entregue / Concluído |',
+        security: [{ adminAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' }, example: 123 }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['passo'],
+                properties: {
+                  passo: { type: 'integer', minimum: 0, maximum: 5, example: 3 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Passo atualizado com sucesso',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    message:     { type: 'string', example: 'Passo atualizado com sucesso' },
+                    passo_atual: { type: 'integer', example: 3 },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Passo ausente ou fora do intervalo permitido (0–5)' },
+          401: { description: 'Não autenticado' },
+          403: { description: 'Acesso negado — requer admin' },
+          404: { description: 'Pedido não encontrado' },
+          500: { description: 'Erro interno do servidor' },
+        },
+      },
+    },
+
     '/api/dashboard': {
       get: {
         tags: ['Dashboard'],
