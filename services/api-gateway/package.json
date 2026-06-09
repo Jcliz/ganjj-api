@@ -1,0 +1,14 @@
+{
+  "name": "ganjj-api-gateway",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@scalar/express-api-reference": "^0.9.20",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "ganjj-shared",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.20.0"
+  }
+}

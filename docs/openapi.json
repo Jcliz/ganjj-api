@@ -1,0 +1,2419 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "GANJJ API",
+    "description": "\nAPI do e-commerce **GANJJ** — plataforma de moda organizada em arquitetura de **microsserviços**.\n\n## Arquitetura\n\nTodas as requisições passam pelo **API Gateway** (`http://localhost:3000`), que roteia cada chamada para o serviço responsável:\n\n| Serviço | Porta | Responsabilidade |\n|---|---|---|\n| api-gateway | 3000 | Ponto de entrada único, CORS |\n| auth-service | 3001 | Autenticação e clientes |\n| product-service | 3002 | Produtos e promoções |\n| cart-service | 3003 | Carrinho de compras |\n| order-service | 3004 | Pedidos |\n| dashboard-service | 3005 | Analytics |\n\n## Comunicação entre serviços\n\nOs serviços se comunicam via **HTTP interno**:\n- **cart-service → product-service**: verifica estoque antes de adicionar item à cesta\n- **order-service → product-service**: decrementa estoque atomicamente ao criar pedido (padrão Saga com compensação)\n\n## Autenticação\n\nA API utiliza **JWT via cookie HttpOnly**. Após o login ou cadastro, os tokens são definidos automaticamente nos cookies `accessToken` (15 min) e `refreshToken` (7 dias). Para ambientes não-browser, passe o token no header `Authorization: Bearer <token>`.\n\n## Como autenticar no Scalar\n\n1. Fazer `POST /api/auth/login` e copiar o `accessToken` do body da resposta\n2. No endpoint protegido, expandir a seção **Autenticação** (topo do painel)\n3. Selecionar **Bearer** e colar o token\n4. Enviar a requisição normalmente\n\n> O token expira em **15 min**. Basta fazer login novamente para obter um novo.\n\n## Tabela de permissões\n\n| Endpoint | Público | Autenticado | Admin |\n|---|---|---|---|\n| GET /api/produtos | ✅ | | |\n| GET /api/sale | ✅ | | |\n| POST/PUT/DELETE /api/produtos | | | ✅ |\n| GET/POST/DELETE /api/cesta | | ✅ | |\n| POST/GET /api/pedidos | | ✅ | |\n| GET/POST/PUT/DELETE /api/clientes | | | ✅ |\n| GET /api/dashboard | | | ✅ |\n    ",
+    "version": "2.0.0",
+    "contact": {
+      "name": "Equipe GANJJ"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "API Gateway — ponto de entrada principal"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "auth-service (acesso direto)"
+    },
+    {
+      "url": "http://localhost:3002",
+      "description": "product-service (acesso direto)"
+    },
+    {
+      "url": "http://localhost:3003",
+      "description": "cart-service (acesso direto)"
+    },
+    {
+      "url": "http://localhost:3004",
+      "description": "order-service (acesso direto)"
+    },
+    {
+      "url": "http://localhost:3005",
+      "description": "dashboard-service (acesso direto)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Autenticação",
+      "description": "Autenticação e gerenciamento de sessão → auth-service :3001"
+    },
+    {
+      "name": "Clientes",
+      "description": "Gerenciamento de usuários/clientes → auth-service :3001"
+    },
+    {
+      "name": "Produtos",
+      "description": "Catálogo de produtos → product-service :3002"
+    },
+    {
+      "name": "Sale",
+      "description": "Produtos em promoção → product-service :3002"
+    },
+    {
+      "name": "Cesta",
+      "description": "Carrinho de compras → cart-service :3003"
+    },
+    {
+      "name": "Pedidos",
+      "description": "Criação e consulta de pedidos → order-service :3004"
+    },
+    {
+      "name": "Dashboard",
+      "description": "Métricas e analytics do negócio → dashboard-service :3005"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "accessToken",
+        "description": "Token JWT definido automaticamente após login/cadastro"
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT no header Authorization (alternativa ao cookie)"
+      },
+      "adminAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT de **administrador** (campo `is_admin = true`). Mesmo token gerado no login, mas o usuário precisa ter privilégios de admin — caso contrário a API retorna 403."
+      }
+    },
+    "schemas": {
+      "Usuario": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "nome": {
+            "type": "string",
+            "example": "João Silva"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "joao@email.com"
+          },
+          "is_admin": {
+            "type": "boolean",
+            "example": false
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-03-15T10:30:00.000Z"
+          }
+        }
+      },
+      "UsuarioListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 7
+          },
+          "firstName": {
+            "type": "string",
+            "example": "Maria"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Oliveira"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "maria@email.com"
+          },
+          "role": {
+            "type": "boolean",
+            "description": "true = Admin",
+            "example": false
+          },
+          "status": {
+            "type": "boolean",
+            "description": "true = Ativo",
+            "example": true
+          },
+          "joined": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-20T08:00:00.000Z"
+          }
+        }
+      },
+      "Produto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 3
+          },
+          "nome": {
+            "type": "string",
+            "example": "Camiseta Oversized Preta"
+          },
+          "descricao": {
+            "type": "string",
+            "example": "Camiseta oversized em algodão 100%, corte moderno."
+          },
+          "preco": {
+            "type": "number",
+            "format": "float",
+            "example": 89.9
+          },
+          "estoque": {
+            "type": "integer",
+            "example": 42
+          },
+          "cor": {
+            "type": "string",
+            "example": "Black"
+          },
+          "status": {
+            "type": "boolean",
+            "example": true
+          },
+          "imagem_url": {
+            "type": "string",
+            "example": "https://exemplo.com/img/camiseta-preta.jpg"
+          },
+          "popular": {
+            "type": "boolean",
+            "example": true
+          },
+          "feminino": {
+            "type": "boolean",
+            "example": false
+          },
+          "novo": {
+            "type": "boolean",
+            "example": false
+          },
+          "social": {
+            "type": "boolean",
+            "example": false
+          },
+          "tipo_roupa": {
+            "type": "string",
+            "nullable": true,
+            "example": "Camisetas"
+          },
+          "tamanhos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "example": [
+              "P",
+              "M",
+              "G",
+              "GG"
+            ]
+          },
+          "em_sale": {
+            "type": "boolean",
+            "example": false
+          },
+          "desconto_pct": {
+            "type": "integer",
+            "nullable": true,
+            "example": null
+          },
+          "preco_sale": {
+            "type": "number",
+            "nullable": true,
+            "example": null
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-02-10T14:00:00.000Z"
+          }
+        }
+      },
+      "ProdutoSale": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "nome": {
+            "type": "string",
+            "example": "Camiseta Básica Preta"
+          },
+          "descricao": {
+            "type": "string",
+            "example": "Camiseta de algodão 100% confortável."
+          },
+          "preco": {
+            "type": "number",
+            "example": 49.9
+          },
+          "preco_sale": {
+            "type": "number",
+            "example": 34.93
+          },
+          "estoque": {
+            "type": "integer",
+            "example": 150
+          },
+          "cor": {
+            "type": "string",
+            "example": "Black"
+          },
+          "imagem_url": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "popular": {
+            "type": "boolean",
+            "example": true
+          },
+          "feminino": {
+            "type": "boolean",
+            "example": false
+          },
+          "sale_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "desconto_pct": {
+            "type": "integer",
+            "example": 30
+          },
+          "categoria": {
+            "type": "string",
+            "enum": [
+              "Superiores",
+              "Inferiores",
+              "Inverno"
+            ],
+            "example": "Superiores"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-02-10T14:00:00.000Z"
+          }
+        }
+      },
+      "ItemCesta": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 12
+          },
+          "produto_id": {
+            "type": "integer",
+            "example": 3
+          },
+          "nome": {
+            "type": "string",
+            "example": "Camiseta Oversized Preta"
+          },
+          "preco": {
+            "type": "number",
+            "example": 89.9
+          },
+          "cor": {
+            "type": "string",
+            "example": "Black"
+          },
+          "imagem_url": {
+            "type": "string",
+            "example": "https://exemplo.com/img/camiseta-preta.jpg"
+          },
+          "quantidade": {
+            "type": "integer",
+            "example": 2
+          }
+        }
+      },
+      "ItemPedido": {
+        "type": "object",
+        "required": [
+          "produto_id",
+          "quantidade",
+          "preco"
+        ],
+        "properties": {
+          "produto_id": {
+            "type": "integer",
+            "example": 3
+          },
+          "quantidade": {
+            "type": "integer",
+            "example": 2
+          },
+          "preco": {
+            "type": "number",
+            "format": "float",
+            "example": 89.9
+          }
+        }
+      },
+      "Pedido": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 123
+          },
+          "codigo": {
+            "type": "string",
+            "example": "#GNJ-00123"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "shipped",
+              "delivered",
+              "cancelled"
+            ],
+            "example": "pending"
+          },
+          "total": {
+            "type": "number",
+            "format": "float",
+            "example": 179.8
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-05-01T16:45:00.000Z"
+          }
+        }
+      },
+      "PedidoDetalhado": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 123
+          },
+          "codigo": {
+            "type": "string",
+            "example": "#GNJ-00123"
+          },
+          "cliente": {
+            "type": "string",
+            "nullable": true,
+            "example": "João Silva"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "example": "joao@email.com"
+          },
+          "status": {
+            "type": "string",
+            "example": "pending"
+          },
+          "total": {
+            "type": "number",
+            "example": 179.8
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-05-01T16:45:00.000Z"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "nome": {
+                  "type": "string",
+                  "example": "Camiseta Oversized Preta"
+                },
+                "quantidade": {
+                  "type": "integer",
+                  "example": 2
+                },
+                "preco": {
+                  "type": "number",
+                  "example": 89.9
+                },
+                "imagem_url": {
+                  "type": "string",
+                  "nullable": true,
+                  "example": "https://exemplo.com/img/camiseta-preta.jpg"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ErroGenerico": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Mensagem de erro descritiva."
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Cadastrar novo usuário",
+        "description": "Cria uma nova conta de usuário e retorna os dados junto com os cookies de autenticação (`accessToken` e `refreshToken`).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "email",
+                  "senha"
+                ],
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "example": "João"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Silva"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "joao@email.com"
+                  },
+                  "senha": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 6,
+                    "example": "senhaSegura123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário criado com sucesso",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Cookies `accessToken` (15min) e `refreshToken` (7 dias) definidos automaticamente",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Cadastro realizado com sucesso"
+                    },
+                    "usuario": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Campos obrigatórios ausentes"
+          },
+          "409": {
+            "description": "E-mail já cadastrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Login",
+        "description": "Autentica o usuário com e-mail e senha. Define cookies `accessToken` e `refreshToken` na resposta.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@ganjj.com"
+                  },
+                  "senha": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "senha123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login realizado com sucesso",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Cookies de autenticação definidos",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Login realizado com sucesso"
+                    },
+                    "accessToken": {
+                      "type": "string",
+                      "description": "JWT válido por 15 min. Use como Bearer em clientes REST.",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    },
+                    "usuario": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "nome": {
+                          "type": "string",
+                          "example": "Admin GANJJ"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "admin@ganjj.com"
+                        },
+                        "is_admin": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "E-mail ou senha não informados"
+          },
+          "401": {
+            "description": "Credenciais inválidas"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Logout",
+        "description": "Encerra a sessão limpando os cookies `accessToken` e `refreshToken`.",
+        "responses": {
+          "200": {
+            "description": "Logout realizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Logout realizado com sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Renovar token de acesso",
+        "description": "Gera um novo `accessToken` a partir do `refreshToken` armazenado no cookie.",
+        "responses": {
+          "200": {
+            "description": "Token renovado com sucesso",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Novo `accessToken` (15min) definido no cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Token renovado com sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refresh token ausente, inválido ou expirado"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Dados do usuário autenticado",
+        "description": "Retorna as informações do usuário a partir do token JWT.",
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do usuário autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "usuario": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "404": {
+            "description": "Usuário não encontrado"
+          }
+        }
+      }
+    },
+    "/api/clientes": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Listar clientes",
+        "security": [
+          {
+            "adminAuth": []
+          }
+        ],
+        "description": "**Requer admin.** Retorna todos os clientes/usuários cadastrados, ordenados do mais recente para o mais antigo.",
+        "responses": {
+          "200": {
+            "description": "Lista de clientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioListItem"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado — requer admin"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Criar cliente",
+        "security": [
+          {
+            "adminAuth": []
+          }
+        ],
+        "description": "**Requer admin.** Cria um novo cliente. Uma senha temporária é gerada automaticamente.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "email"
+                ],
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "example": "Carlos"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Mendes"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "carlos@email.com"
+                  },
+                  "role": {
+                    "type": "string",
+                    "description": "\"Admin\" para acesso administrativo",
+                    "example": "Admin"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "\"Active\" ou \"Inactive\"",
+                    "example": "Active"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cliente criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioListItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Campos ausentes ou e-mail inválido"
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado — requer admin"
+          },
+          "409": {
+            "description": "E-mail já cadastrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/clientes/{id}": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Buscar cliente por ID",
+        "security": [
+          {
+            "adminAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 7
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioListItem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado — requer admin"
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Atualizar cliente",
+        "security": [
+          {
+            "adminAuth": []
+          }
+        ],
+        "description": "**Requer admin.** Atualiza os dados de um cliente. Todos os campos são opcionais.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 7
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "example": "Maria"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Santos"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "maria.santos@email.com"
+                  },
+                  "role": {
+                    "type": "string",
+                    "description": "\"Admin\" ou outro valor",
+                    "example": "Admin"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "\"Active\" ou \"Inactive\"",
+                    "example": "Inactive"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cliente atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioListItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nenhum campo enviado, e-mail inválido ou status inválido"
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado — requer admin"
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          },
+          "409": {
+            "description": "E-mail já em uso por outro usuário"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Deletar cliente",
+        "security": [
+          {
+            "adminAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 7
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente deletado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Usuário deletado com sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado — requer admin"
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/produtos": {
+      "get": {
+        "tags": [
+          "Produtos"
+        ],
+        "summary": "Listar produtos",
+        "description": "Retorna produtos ativos com suporte a filtros por query string.",
+        "parameters": [
+          {
+            "name": "feminino",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Filtrar por gênero feminino"
+          },
+          {
+            "name": "tipo_roupa",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filtrar por tipo (ex: Camisetas)",
+            "example": "Camisetas"
+          },
+          {
+            "name": "tamanho",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filtrar por tamanho (ex: M)",
+            "example": "M"
+          },
+          {
+            "name": "popular",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Filtrar apenas populares"
+          },
+          {
+            "name": "novo",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Filtrar apenas novidades"
+          },
+          {
+            "name": "social",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Filtrar social"
+          },
+          {
+            "name": "preco_max",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Preço máximo",
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de produtos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Produto"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Produtos"
+        ],
+        "summary": "Criar produto",
+        "description": "**Requer admin.** Cadastra um novo produto no catálogo.",
+        "security": [
+          {
+            "adminAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nome",
+                  "preco",
+                  "estoque"
+                ],
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "example": "Calça Cargo Bege"
+                  },
+                  "descricao": {
+                    "type": "string",
+                    "example": "Calça cargo em tecido resistente."
+                  },
+                  "preco": {
+                    "type": "number",
+                    "format": "float",
+                    "minimum": 0.01,
+                    "example": 149.9
+                  },
+                  "estoque": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 30
+                  },
+                  "cor": {
+                    "type": "string",
+                    "example": "Tan"
+                  },
+                  "status": {
+                    "type": "boolean",
+                    "default": true,
+                    "example": true
+                  },
+                  "imagem_url": {
+                    "type": "string",
+                    "example": "https://exemplo.com/img/calca.jpg"
+                  },
+                  "popular": {
+                    "type": "boolean",
+                    "default": false,
+                    "example": false
+                  },
+                  "feminino": {
+                    "type": "boolean",
+                    "default": false,
+                    "example": false
+                  },
+                  "novo": {
+                    "type": "boolean",
+                    "default": true,
+                    "example": true
+                  },
+                  "social": {
+                    "type": "boolean",
+                    "default": false,
+                    "example": false
+                  },
+                  "tipo_roupa": {
+                    "type": "string",
+                    "description": "Nome do tipo (ex: Calças)",
+                    "example": "Calças"
+                  },
+                  "tamanhos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "38",
+                      "40",
+                      "42"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Produto criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Produto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Campos obrigatórios ausentes ou valores inválidos"
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado — requer admin"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/produtos/{id}": {
+      "get": {
+        "tags": [
+          "Produtos"
+        ],
+        "summary": "Buscar produto por ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produto encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Produto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Produto não encontrado"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Produtos"
+        ],
+        "summary": "Atualizar produto",
+        "description": "**Requer admin.** Atualiza os dados de um produto. Todos os campos são opcionais.",
+        "security": [
+          {
+            "adminAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 3
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "example": "Camiseta Oversized Branca"
+                  },
+                  "preco": {
+                    "type": "number",
+                    "example": 99.9
+                  },
+                  "estoque": {
+                    "type": "integer",
+                    "example": 15
+                  },
+                  "cor": {
+                    "type": "string",
+                    "example": "Cream"
+                  },
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "popular": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "feminino": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "tipo_roupa": {
+                    "type": "string",
+                    "example": "Camisetas"
+                  },
+                  "tamanhos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "P",
+                      "M",
+                      "G"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Produto atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Produto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nenhum campo enviado ou valor inválido"
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado — requer admin"
+          },
+          "404": {
+            "description": "Produto não encontrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Produtos"
+        ],
+        "summary": "Deletar produto",
+        "security": [
+          {
+            "adminAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produto deletado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Produto deletado com sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado — requer admin"
+          },
+          "404": {
+            "description": "Produto não encontrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/sale": {
+      "get": {
+        "tags": [
+          "Sale"
+        ],
+        "summary": "Listar produtos em promoção",
+        "description": "Retorna todos os produtos com desconto ativo, ordenados do maior desconto para o menor. Aceita filtro por categoria.",
+        "parameters": [
+          {
+            "name": "categoria",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Todos",
+                "Superiores",
+                "Inferiores",
+                "Inverno"
+              ]
+            },
+            "description": "Filtrar por categoria de promoção. Omitir ou passar \"Todos\" retorna todas.",
+            "example": "Superiores"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de produtos em promoção",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProdutoSale"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "nome": "Camiseta Básica Preta",
+                    "preco": 49.9,
+                    "preco_sale": 34.93,
+                    "estoque": 150,
+                    "cor": "Black",
+                    "sale_id": 1,
+                    "desconto_pct": 30,
+                    "categoria": "Superiores"
+                  }
+                ]
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/cesta": {
+      "get": {
+        "tags": [
+          "Cesta"
+        ],
+        "summary": "Ver cesta do usuário",
+        "description": "Retorna todos os itens da cesta do usuário autenticado. Retorna lista vazia se não houver cesta.",
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Itens da cesta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "itens": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ItemCesta"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Cesta"
+        ],
+        "summary": "Limpar cesta",
+        "description": "Remove todos os itens da cesta do usuário autenticado.",
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cesta limpa com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Cesta limpa"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/cesta/itens": {
+      "post": {
+        "tags": [
+          "Cesta"
+        ],
+        "summary": "Adicionar item à cesta",
+        "description": "Adiciona um produto à cesta. Se o produto já estiver na cesta, incrementa a quantidade. A cesta é criada automaticamente se não existir.\n\n> **Comunicação entre serviços:** Este endpoint aciona o **cart-service**, que consulta o **product-service** via HTTP para verificar a disponibilidade de estoque antes de inserir o item.",
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "produto_id"
+                ],
+                "properties": {
+                  "produto_id": {
+                    "type": "integer",
+                    "example": 3
+                  },
+                  "quantidade": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1,
+                    "example": 2
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item adicionado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Item adicionado à cesta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "produto_id ausente, quantidade inválida ou estoque insuficiente"
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "404": {
+            "description": "Produto não encontrado ou inativo"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/cesta/itens/{produto_id}": {
+      "put": {
+        "tags": [
+          "Cesta"
+        ],
+        "summary": "Atualizar quantidade de item",
+        "description": "Altera a quantidade de um produto específico na cesta.",
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "produto_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 3
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "quantidade"
+                ],
+                "properties": {
+                  "quantidade": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 3
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Quantidade atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Quantidade atualizada"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Quantidade inválida"
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "404": {
+            "description": "Cesta ou item não encontrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Cesta"
+        ],
+        "summary": "Remover item da cesta",
+        "description": "Remove um produto específico da cesta do usuário autenticado.",
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "produto_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item removido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Item removido da cesta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "404": {
+            "description": "Cesta não encontrada"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/pedidos": {
+      "post": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Criar pedido",
+        "description": "Cria um novo pedido com os itens informados.\n\n> **Comunicação entre serviços (padrão Saga):** O **order-service** chama o **product-service** via HTTP para decrementar o estoque de cada item atomicamente. Se qualquer item falhar (estoque insuficiente ou produto inexistente), todos os estoques já decrementados são restaurados automaticamente antes de retornar o erro.",
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "itens"
+                ],
+                "properties": {
+                  "itens": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "$ref": "#/components/schemas/ItemPedido"
+                    }
+                  }
+                }
+              },
+              "example": {
+                "itens": [
+                  {
+                    "produto_id": 3,
+                    "quantidade": 2,
+                    "preco": 89.9
+                  },
+                  {
+                    "produto_id": 5,
+                    "quantidade": 1,
+                    "preco": 149.9
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pedido criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pedido"
+                },
+                "example": {
+                  "id": 123,
+                  "codigo": "#GNJ-00123",
+                  "status": "pending",
+                  "total": 329.7,
+                  "criado_em": "2024-05-01T16:45:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Itens vazios, campos ausentes ou estoque insuficiente"
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "404": {
+            "description": "Produto não encontrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/pedidos/{id}": {
+      "get": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Buscar pedido por ID",
+        "description": "Retorna os detalhes de um pedido incluindo todos os itens, dados do cliente e status atual.",
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 123
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pedido encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PedidoDetalhado"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "404": {
+            "description": "Pedido não encontrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/pedidos/meus": {
+      "get": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Listar pedidos do usuário autenticado",
+        "description": "Retorna todos os pedidos realizados pelo usuário logado, ordenados do mais recente para o mais antigo. Inclui o passo atual do rastreio (0–5), endereço de entrega e número de rastreio.",
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pedidos do usuário",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "example": 123
+                      },
+                      "codigo": {
+                        "type": "string",
+                        "example": "#GNJ-00123"
+                      },
+                      "status": {
+                        "type": "string",
+                        "example": "pending"
+                      },
+                      "passo_atual": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 5,
+                        "description": "0–2 = em processamento, 3–4 = em transporte, 5 = entregue",
+                        "example": 2
+                      },
+                      "total": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 329.7
+                      },
+                      "endereco_entrega": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": "Rua das Flores, 123 — São Paulo, SP"
+                      },
+                      "numero_rastreio": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": "BR123456789SP"
+                      },
+                      "criado_em": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-05-01T16:45:00.000Z"
+                      },
+                      "itens": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "nome": {
+                              "type": "string",
+                              "example": "Camiseta Oversized Preta"
+                            },
+                            "quantidade": {
+                              "type": "integer",
+                              "example": 2
+                            },
+                            "preco": {
+                              "type": "number",
+                              "example": 89.9
+                            },
+                            "imagem_url": {
+                              "type": "string",
+                              "nullable": true,
+                              "example": "https://exemplo.com/img/camiseta-preta.jpg"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/pedidos/admin/todos": {
+      "get": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Listar todos os pedidos (admin)",
+        "description": "**Requer admin.** Retorna todos os pedidos do sistema com dados do cliente, ordenados do mais recente para o mais antigo.",
+        "security": [
+          {
+            "adminAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista completa de pedidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "example": 123
+                      },
+                      "codigo": {
+                        "type": "string",
+                        "example": "#GNJ-00123"
+                      },
+                      "cliente": {
+                        "type": "string",
+                        "example": "João Silva"
+                      },
+                      "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "joao@email.com"
+                      },
+                      "status": {
+                        "type": "string",
+                        "example": "pending"
+                      },
+                      "passo_atual": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 5,
+                        "example": 1
+                      },
+                      "total": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 329.7
+                      },
+                      "numero_rastreio": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": "BR123456789SP"
+                      },
+                      "criado_em": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-05-01T16:45:00.000Z"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "id": 123,
+                    "codigo": "#GNJ-00123",
+                    "cliente": "João Silva",
+                    "email": "joao@email.com",
+                    "status": "pending",
+                    "passo_atual": 1,
+                    "total": 329.7,
+                    "numero_rastreio": null,
+                    "criado_em": "2024-05-01T16:45:00.000Z"
+                  },
+                  {
+                    "id": 122,
+                    "codigo": "#GNJ-00122",
+                    "cliente": "Maria Santos",
+                    "email": "maria@email.com",
+                    "status": "delivered",
+                    "passo_atual": 5,
+                    "total": 89.9,
+                    "numero_rastreio": "BR987654321SP",
+                    "criado_em": "2024-04-28T10:00:00.000Z"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado — requer admin"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/pedidos/{id}/passo": {
+      "put": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Atualizar passo do pedido (admin)",
+        "description": "**Requer admin.** Avança ou retrocede o passo de rastreio de um pedido. O `passo` deve ser um inteiro de 0 a 5.\n\n| Passo | Significado |\n|---|---|\n| 0–2 | Em processamento |\n| 3–4 | Em transporte |\n| 5 | Entregue / Concluído |",
+        "security": [
+          {
+            "adminAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 123
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "passo"
+                ],
+                "properties": {
+                  "passo": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 5,
+                    "example": 3
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Passo atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Passo atualizado com sucesso"
+                    },
+                    "passo_atual": {
+                      "type": "integer",
+                      "example": 3
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Passo ausente ou fora do intervalo permitido (0–5)"
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado — requer admin"
+          },
+          "404": {
+            "description": "Pedido não encontrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Métricas do negócio",
+        "security": [
+          {
+            "adminAuth": []
+          }
+        ],
+        "description": "**Requer admin.** Retorna KPIs, gráfico dos últimos 12 meses, distribuição de status de pedidos, pedidos recentes, produtos com estoque baixo e top produtos por receita.",
+        "responses": {
+          "200": {
+            "description": "Dashboard com todas as métricas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "kpis": {
+                      "type": "object",
+                      "properties": {
+                        "receita_total": {
+                          "type": "number",
+                          "example": 45820.5
+                        },
+                        "total_pedidos": {
+                          "type": "integer",
+                          "example": 312
+                        },
+                        "usuarios_ativos": {
+                          "type": "integer",
+                          "example": 87
+                        },
+                        "total_produtos": {
+                          "type": "integer",
+                          "example": 54
+                        },
+                        "sem_estoque": {
+                          "type": "integer",
+                          "example": 3
+                        },
+                        "ticket_medio": {
+                          "type": "number",
+                          "example": 146.86
+                        }
+                      }
+                    },
+                    "grafico_mensal": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "mes": {
+                            "type": "string",
+                            "example": "Jan"
+                          },
+                          "receita": {
+                            "type": "number",
+                            "example": 3200
+                          },
+                          "pedidos": {
+                            "type": "integer",
+                            "example": 22
+                          }
+                        }
+                      }
+                    },
+                    "status_pedidos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "example": "Entregue"
+                          },
+                          "value": {
+                            "type": "number",
+                            "description": "Percentual (%)",
+                            "example": 62
+                          },
+                          "color": {
+                            "type": "string",
+                            "example": "#2a7a3b"
+                          }
+                        }
+                      }
+                    },
+                    "pedidos_recentes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "#GNJ-00123"
+                          },
+                          "cliente": {
+                            "type": "string",
+                            "example": "João Silva"
+                          },
+                          "itens": {
+                            "type": "integer",
+                            "example": 3
+                          },
+                          "total": {
+                            "type": "number",
+                            "example": 329.7
+                          },
+                          "status": {
+                            "type": "string",
+                            "example": "Em processamento"
+                          },
+                          "data": {
+                            "type": "string",
+                            "example": "01 mai."
+                          }
+                        }
+                      }
+                    },
+                    "estoque_baixo": {
+                      "type": "array",
+                      "description": "Produtos com estoque ≤ 50, ordenados pelo menor estoque",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "nome": {
+                            "type": "string",
+                            "example": "Jaqueta Corta-Vento Preta"
+                          },
+                          "estoque": {
+                            "type": "integer",
+                            "example": 2
+                          },
+                          "categoria": {
+                            "type": "string",
+                            "enum": [
+                              "Fem.",
+                              "Masc."
+                            ],
+                            "example": "Masc."
+                          }
+                        }
+                      }
+                    },
+                    "top_produtos": {
+                      "type": "array",
+                      "description": "Top 5 produtos por receita gerada",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "nome": {
+                            "type": "string",
+                            "example": "Camiseta Básica Preta"
+                          },
+                          "receita": {
+                            "type": "number",
+                            "example": 8091
+                          },
+                          "pedidos": {
+                            "type": "integer",
+                            "example": 90
+                          },
+                          "pct": {
+                            "type": "number",
+                            "description": "Percentual em relação ao produto líder (0–100)",
+                            "example": 100
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado — requer admin"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    }
+  }
+}
