@@ -65,7 +65,7 @@ describe('createCliente', () => {
     mockConn.query
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({
-        rows: [{ id: 1, nome: 'João Silva', email: 'novo@b.com', isAdmin: true, status: true, criado_em: new Date() }],
+        rows: [{ id: 1, nome: 'João Silva', email: 'novo@b.com', is_admin: true, status: true, criado_em: new Date() }],
       });
 
     await createCliente(req, res);
@@ -83,7 +83,7 @@ describe('getClientes', () => {
     const res = mockRes();
     mockConn.query.mockResolvedValueOnce({
       rows: [
-        { id: 1, nome: 'João Silva', email: 'a@b.com', isAdmin: false, status: true, criado_em: new Date() },
+        { id: 1, nome: 'João Silva', email: 'a@b.com', is_admin: false, status: true, criado_em: new Date() },
       ],
     });
 
@@ -124,7 +124,7 @@ describe('getClienteById', () => {
     const req = { params: { id: '1' } };
     const res = mockRes();
     mockConn.query.mockResolvedValueOnce({
-      rows: [{ id: 1, nome: 'João Silva', email: 'a@b.com', isAdmin: false, status: true, criado_em: new Date() }],
+      rows: [{ id: 1, nome: 'João Silva', email: 'a@b.com', is_admin: false, status: true, criado_em: new Date() }],
     });
 
     await getClienteById(req, res);
@@ -175,7 +175,7 @@ describe('updateCliente', () => {
     mockConn.query
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({
-        rows: [{ id: 1, nome: 'João Silva', email: 'novo@b.com', isAdmin: false, status: true, criado_em: new Date() }],
+        rows: [{ id: 1, nome: 'João Silva', email: 'novo@b.com', is_admin: false, status: true, criado_em: new Date() }],
       });
 
     await updateCliente(req, res);

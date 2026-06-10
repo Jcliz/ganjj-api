@@ -16,8 +16,8 @@ function buildUserResponse(row) {
         firstName,
         lastName,
         email: row.email,
-        role: row.isAdmin ? true : false,
-        status: row.status ? true : false,
+        role: Boolean(row.is_admin),
+        status: Boolean(row.status),
         joined: row.criado_em
     };
 }

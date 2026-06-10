@@ -221,3 +221,44 @@ describe('me', () => {
     expect(mockConn.release).toHaveBeenCalled();
   });
 });
+
+// ─── caminhos de erro 500 ─────────────────────────────────────────────────────
+
+describe('erros de banco (500)', () => {
+  test('login retorna 500 se o banco falha', async () => {
+    const req = { body: { email: 'a@b.com', senha: '123' } };
+    const res = mockRes();
+    mockConn.query.mockRejectedValueOnce(new Error('DB error'));
+
+    await login(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro ao realizar login' });
+    expect(mockConn.release).toHaveBeenCalled();
+  });
+
+  test('register retorna 500 se o banco falha', async () => {
+    const req = { body: { firstName: 'João', lastName: 'Silva', email: 'a@b.com', senha: '123' } };
+    const res = mockRes();
+    bcrypt.hash.mockResolvedValueOnce('hash');
+    mockConn.query.mockRejectedValueOnce(new Error('DB error'));
+
+    await register(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro ao realizar cadastro' });
+    expect(mockConn.release).toHaveBeenCalled();
+  });
+
+  test('me retorna 500 se o banco falha', async () => {
+    const req = { usuario: { id: 1 } };
+    const res = mockRes();
+    mockConn.query.mockRejectedValueOnce(new Error('DB error'));
+
+    await me(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro ao buscar dados do usuário' });
+    expect(mockConn.release).toHaveBeenCalled();
+  });
+});

@@ -3,7 +3,13 @@ jest.mock('../http/productClient');
 
 const db = require('../../shared/db');
 const productClient = require('../http/productClient');
-const { createPedido, getPedido } = require('../controllers/pedidoController');
+const {
+  createPedido,
+  getPedido,
+  listarMeusPedidos,
+  listarTodosPedidos,
+  atualizarPasso,
+} = require('../controllers/pedidoController');
 
 function mockRes() {
   const res = {};
@@ -192,5 +198,181 @@ describe('getPedido', () => {
       })
     );
     expect(mockConn.release).toHaveBeenCalled();
+  });
+
+  test('retorna 500 em caso de erro no banco', async () => {
+    const req = { params: { id: '1' } };
+    const res = mockRes();
+    mockConn.query.mockRejectedValueOnce(new Error('DB error'));
+
+    await getPedido(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro ao buscar pedido' });
+    expect(mockConn.release).toHaveBeenCalled();
+  });
+});
+
+// ─── listarMeusPedidos ────────────────────────────────────────────────────────
+
+describe('listarMeusPedidos', () => {
+  test('lista pedidos do usuário com itens formatados', async () => {
+    const req = { usuario: { id: 1 } };
+    const res = mockRes();
+    const criado_em = new Date();
+    mockConn.query
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 7, total: '150.00', status: 'shipping', passo_atual: 3,
+          endereco_entrega: 'Rua A, 123', numero_rastreio: 'BR123', criado_em,
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ quantidade: 3, preco: '50.00', tamanho: 'M', nome: 'Camiseta' }],
+      });
+
+    await listarMeusPedidos(req, res);
+
+    expect(res.json).toHaveBeenCalledWith([
+      expect.objectContaining({
+        id: 7,
+        codigo: '#GNJ-00007',
+        status: 'shipping',
+        passo_atual: 3,
+        total: 150,
+        numero_rastreio: 'BR123',
+        itens: [expect.objectContaining({ nome: 'Camiseta', tamanho: 'M', quantidade: 3, preco: 50 })],
+      }),
+    ]);
+    expect(mockConn.release).toHaveBeenCalled();
+  });
+
+  test('retorna lista vazia se usuário não tem pedidos', async () => {
+    const req = { usuario: { id: 1 } };
+    const res = mockRes();
+    mockConn.query.mockResolvedValueOnce({ rows: [] });
+
+    await listarMeusPedidos(req, res);
+
+    expect(res.json).toHaveBeenCalledWith([]);
+  });
+
+  test('retorna 500 em caso de erro no banco', async () => {
+    const req = { usuario: { id: 1 } };
+    const res = mockRes();
+    mockConn.query.mockRejectedValueOnce(new Error('DB error'));
+
+    await listarMeusPedidos(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro ao listar pedidos' });
+  });
+});
+
+// ─── listarTodosPedidos ───────────────────────────────────────────────────────
+
+describe('listarTodosPedidos', () => {
+  test('lista todos os pedidos com dados do cliente', async () => {
+    const req = {};
+    const res = mockRes();
+    const criado_em = new Date();
+    mockConn.query
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 2, total: '80.00', status: 'pending', passo_atual: 0,
+          endereco_entrega: null, numero_rastreio: null, criado_em,
+          cliente_nome: 'Maria', cliente_email: 'maria@b.com',
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ quantidade: 1, preco: '80.00', tamanho: null, nome: 'Calça' }],
+      });
+
+    await listarTodosPedidos(req, res);
+
+    expect(res.json).toHaveBeenCalledWith([
+      expect.objectContaining({
+        id: 2,
+        codigo: '#GNJ-00002',
+        cliente_nome: 'Maria',
+        cliente_email: 'maria@b.com',
+        total: 80,
+      }),
+    ]);
+    expect(mockConn.release).toHaveBeenCalled();
+  });
+
+  test('retorna 500 em caso de erro no banco', async () => {
+    const req = {};
+    const res = mockRes();
+    mockConn.query.mockRejectedValueOnce(new Error('DB error'));
+
+    await listarTodosPedidos(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro ao listar pedidos' });
+  });
+});
+
+// ─── atualizarPasso ───────────────────────────────────────────────────────────
+
+describe('atualizarPasso', () => {
+  test.each([
+    ['não fornecido', undefined],
+    ['não numérico', 'abc'],
+    ['negativo', -1],
+    ['maior que 5', 6],
+  ])('retorna 400 se passo %s', async (_label, passo) => {
+    const req = { params: { id: '1' }, body: { passo } };
+    const res = mockRes();
+
+    await atualizarPasso(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'passo deve ser um número entre 0 e 5' });
+  });
+
+  test('retorna 404 se pedido não encontrado', async () => {
+    const req = { params: { id: '99' }, body: { passo: 2 } };
+    const res = mockRes();
+    mockConn.query.mockResolvedValueOnce({ rows: [] });
+
+    await atualizarPasso(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Pedido não encontrado' });
+  });
+
+  test.each([
+    [0, 'pending'],
+    [2, 'pending'],
+    [3, 'shipping'],
+    [4, 'shipping'],
+    [5, 'completed'],
+  ])('passo %i mapeia para status "%s"', async (passo, statusEsperado) => {
+    const req = { params: { id: '1' }, body: { passo } };
+    const res = mockRes();
+    mockConn.query.mockResolvedValueOnce({
+      rows: [{ id: 1, passo_atual: passo, status: statusEsperado }],
+    });
+
+    await atualizarPasso(req, res);
+
+    expect(mockConn.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE compra'),
+      [passo, statusEsperado, '1']
+    );
+    expect(res.json).toHaveBeenCalledWith({ id: 1, passo_atual: passo, status: statusEsperado });
+  });
+
+  test('retorna 500 em caso de erro no banco', async () => {
+    const req = { params: { id: '1' }, body: { passo: 1 } };
+    const res = mockRes();
+    mockConn.query.mockRejectedValueOnce(new Error('DB error'));
+
+    await atualizarPasso(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro ao atualizar passo' });
   });
 });

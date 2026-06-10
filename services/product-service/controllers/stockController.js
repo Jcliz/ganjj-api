@@ -9,8 +9,9 @@ function verificarInterno(req, res, next) {
 
 async function getStock(req, res) {
     const { id } = req.params;
-    const conn = await db.connect();
+    let conn;
     try {
+        conn = await db.connect();
         const result = await conn.query(
             'SELECT id, nome, estoque FROM produto WHERE id = $1 AND status = true',
             [id]
@@ -21,7 +22,7 @@ async function getStock(req, res) {
         console.error('Erro ao buscar estoque:', error);
         res.status(500).json({ error: 'Erro ao buscar estoque' });
     } finally {
-        conn.release();
+        if (conn) conn.release();
     }
 }
 
@@ -33,8 +34,9 @@ async function decrementStock(req, res) {
         return res.status(400).json({ error: 'quantidade deve ser maior que zero' });
     }
 
-    const conn = await db.connect();
+    let conn;
     try {
+        conn = await db.connect();
         const result = await conn.query(
             `UPDATE produto SET estoque = estoque - $1
              WHERE id = $2 AND status = true AND estoque >= $1
@@ -53,7 +55,7 @@ async function decrementStock(req, res) {
         console.error('Erro ao decrementar estoque:', error);
         res.status(500).json({ error: 'Erro ao decrementar estoque' });
     } finally {
-        conn.release();
+        if (conn) conn.release();
     }
 }
 
@@ -65,15 +67,16 @@ async function restoreStock(req, res) {
         return res.status(400).json({ error: 'quantidade deve ser maior que zero' });
     }
 
-    const conn = await db.connect();
+    let conn;
     try {
+        conn = await db.connect();
         await conn.query('UPDATE produto SET estoque = estoque + $1 WHERE id = $2', [quantidade, id]);
         res.json({ ok: true });
     } catch (error) {
         console.error('Erro ao restaurar estoque:', error);
         res.status(500).json({ error: 'Erro ao restaurar estoque' });
     } finally {
-        conn.release();
+        if (conn) conn.release();
     }
 }
 

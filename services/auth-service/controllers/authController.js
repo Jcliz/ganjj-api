@@ -15,8 +15,9 @@ async function login(req, res) {
         return res.status(400).json({ error: 'Email e senha são obrigatórios' });
     }
 
-    const conn = await db.connect();
+    let conn;
     try {
+        conn = await db.connect();
         const result = await conn.query(
             'SELECT id, nome, email, senha, is_admin FROM usuario WHERE email = $1 AND status = true',
             [email]
@@ -50,8 +51,11 @@ async function login(req, res) {
             accessToken,
             usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, is_admin: usuario.is_admin },
         });
+    } catch (error) {
+        console.error('Erro ao realizar login:', error);
+        return res.status(500).json({ error: 'Erro ao realizar login' });
     } finally {
-        conn.release();
+        if (conn) conn.release();
     }
 }
 
@@ -94,10 +98,11 @@ async function register(req, res) {
     }
 
     const nome = `${firstName} ${lastName}`;
-    const senhaHash = await bcrypt.hash(senha, 10);
 
-    const conn = await db.connect();
+    let conn;
     try {
+        const senhaHash = await bcrypt.hash(senha, 10);
+        conn = await db.connect();
         const existing = await conn.query('SELECT id FROM usuario WHERE email = $1', [email]);
         if (existing.rows.length > 0) {
             return res.status(409).json({ error: 'E-mail já cadastrado' });
@@ -116,8 +121,11 @@ async function register(req, res) {
         res.cookie('refreshToken', gerarRefreshToken(payload), refreshCookieOptions);
 
         return res.status(201).json({ message: 'Cadastro realizado com sucesso', accessToken, usuario });
+    } catch (error) {
+        console.error('Erro ao realizar cadastro:', error);
+        return res.status(500).json({ error: 'Erro ao realizar cadastro' });
     } finally {
-        conn.release();
+        if (conn) conn.release();
     }
 }
 
@@ -125,8 +133,9 @@ async function me(req, res) {
     if (!req.usuario) {
         return res.status(401).json({ error: 'Não autenticado' });
     }
-    const conn = await db.connect();
+    let conn;
     try {
+        conn = await db.connect();
         const result = await conn.query(
             'SELECT id, nome, email, is_admin, criado_em FROM usuario WHERE id = $1',
             [req.usuario.id]
@@ -135,8 +144,11 @@ async function me(req, res) {
             return res.status(404).json({ error: 'Usuário não encontrado' });
         }
         return res.json({ usuario: result.rows[0] });
+    } catch (error) {
+        console.error('Erro ao buscar usuário autenticado:', error);
+        return res.status(500).json({ error: 'Erro ao buscar dados do usuário' });
     } finally {
-        conn.release();
+        if (conn) conn.release();
     }
 }
 

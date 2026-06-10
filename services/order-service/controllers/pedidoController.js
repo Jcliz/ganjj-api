@@ -75,8 +75,9 @@ async function createPedido(req, res) {
 
 async function getPedido(req, res) {
   const { id } = req.params;
-  const conn = await db.connect();
+  let conn;
   try {
+    conn = await db.connect();
     const compraResult = await conn.query(
       `SELECT c.id, c.total, c.status, c.criado_em, u.nome AS cliente, u.email
        FROM compra c LEFT JOIN usuario u ON c.usuario_id = u.id WHERE c.id = $1`,
@@ -104,7 +105,7 @@ async function getPedido(req, res) {
     console.error('Erro ao buscar pedido:', error);
     res.status(500).json({ error: 'Erro ao buscar pedido' });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
 
@@ -138,8 +139,9 @@ async function buscarItens(conn, compra_id) {
 
 async function listarMeusPedidos(req, res) {
   const usuario_id = req.usuario.id;
-  const conn = await db.connect();
+  let conn;
   try {
+    conn = await db.connect();
     const result = await conn.query(
       `SELECT id, total, status, passo_atual, endereco_entrega, numero_rastreio, criado_em
        FROM compra WHERE usuario_id = $1 ORDER BY criado_em DESC`,
@@ -157,13 +159,14 @@ async function listarMeusPedidos(req, res) {
     console.error('Erro ao listar pedidos do usuário:', error);
     res.status(500).json({ error: 'Erro ao listar pedidos' });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
 
 async function listarTodosPedidos(req, res) {
-  const conn = await db.connect();
+  let conn;
   try {
+    conn = await db.connect();
     const result = await conn.query(
       `SELECT c.id, c.total, c.status, c.passo_atual, c.endereco_entrega, c.numero_rastreio, c.criado_em,
               u.nome AS cliente_nome, u.email AS cliente_email
@@ -185,7 +188,7 @@ async function listarTodosPedidos(req, res) {
     console.error('Erro ao listar todos os pedidos:', error);
     res.status(500).json({ error: 'Erro ao listar pedidos' });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
 
@@ -204,8 +207,9 @@ async function atualizarPasso(req, res) {
   }
 
   const novoStatus = passoParaStatus(passo);
-  const conn = await db.connect();
+  let conn;
   try {
+    conn = await db.connect();
     const result = await conn.query(
       `UPDATE compra SET passo_atual = $1, status = $2 WHERE id = $3 RETURNING id, passo_atual, status`,
       [passo, novoStatus, id]
@@ -216,7 +220,7 @@ async function atualizarPasso(req, res) {
     console.error('Erro ao atualizar passo do pedido:', error);
     res.status(500).json({ error: 'Erro ao atualizar passo' });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
 
