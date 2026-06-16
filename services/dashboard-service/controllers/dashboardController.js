@@ -14,8 +14,9 @@ const STATUS_MAP = {
 };
 
 async function getDashboard(req, res) {
-  const conn = await db.connect();
+  let conn;
   try {
+    conn = await db.connect();
     const kpisResult = await conn.query(`
       SELECT
         (SELECT COALESCE(SUM(total), 0)  FROM compra WHERE status NOT IN ('cancelled', 'canceled')) AS receita_total,
@@ -107,7 +108,7 @@ async function getDashboard(req, res) {
     console.error('Erro ao buscar dashboard:', error);
     res.status(500).json({ error: 'Erro ao buscar dados do dashboard' });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
 

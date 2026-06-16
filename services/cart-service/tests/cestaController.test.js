@@ -111,8 +111,9 @@ describe('adicionarItem', () => {
     const res = mockRes();
     productClient.checkStock.mockResolvedValueOnce({ estoque: 10 });
     mockConn.query
-      .mockResolvedValueOnce({ rows: [{ id: 5 }] })
-      .mockResolvedValueOnce({});
+      .mockResolvedValueOnce({ rows: [{ id: 5 }] })  // carrinho existente
+      .mockResolvedValueOnce({ rows: [] })           // item ainda não está na cesta
+      .mockResolvedValueOnce({});                    // INSERT
 
     await adicionarItem(req, res);
 
@@ -207,7 +208,9 @@ describe('limparCesta', () => {
   test('limpa a cesta do usuário', async () => {
     const req = { usuario: { id: 1 } };
     const res = mockRes();
-    mockConn.query.mockResolvedValueOnce({});
+    mockConn.query
+      .mockResolvedValueOnce({ rows: [{ id: 5 }] })  // carrinho existente
+      .mockResolvedValueOnce({});                    // DELETE
 
     await limparCesta(req, res);
 

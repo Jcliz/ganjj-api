@@ -1,4 +1,18 @@
 const db = require('../../shared/db');
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+function extractCloudinaryPublicId(url) {
+    if (!url) return null;
+    // URL format: https://res.cloudinary.com/{cloud}/image/upload/v{ver}/folder/file.ext
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);
+    return match ? match[1] : null;
+}
 
 function parseBoolean(value) {
     if (value === undefined) return undefined;
@@ -223,8 +237,19 @@ async function deleteProduto(req, res) {
         const { id } = req.params;
         const conn = await db.connect();
         try {
+            const existing = await conn.query('SELECT imagem_url FROM produto WHERE id = $1', [id]);
+            if (existing.rows.length === 0) return res.status(404).json({ error: 'Produto não encontrado' });
+
             const result = await conn.query('DELETE FROM produto WHERE id = $1 RETURNING id', [id]);
             if (result.rows.length === 0) return res.status(404).json({ error: 'Produto não encontrado' });
+
+            const publicId = extractCloudinaryPublicId(existing.rows[0].imagem_url);
+            if (publicId) {
+                cloudinary.uploader.destroy(publicId, { resource_type: 'image' }).catch(err => {
+                    console.error('[product-service] erro ao deletar imagem no Cloudinary:', err);
+                });
+            }
+
             res.json({ message: 'Produto deletado com sucesso' });
         } finally {
             conn.release();

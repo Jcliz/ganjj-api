@@ -13,8 +13,9 @@ async function getOrCreateCarrinho(conn, usuarioId) {
 
 async function getCesta(req, res) {
   const usuarioId = req.usuario.id;
-  const conn = await db.connect();
+  let conn;
   try {
+    conn = await db.connect();
     const carrinhoResult = await conn.query('SELECT id FROM carrinho WHERE usuario_id = $1', [usuarioId]);
     if (carrinhoResult.rows.length === 0) return res.json({ itens: [] });
 
@@ -36,7 +37,7 @@ async function getCesta(req, res) {
     console.error('Erro ao buscar cesta:', error);
     res.status(500).json({ error: 'Erro ao buscar cesta' });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
 
@@ -59,8 +60,9 @@ async function adicionarItem(req, res) {
     return res.status(500).json({ error: 'Erro ao verificar estoque' });
   }
 
-  const conn = await db.connect();
+  let conn;
   try {
+    conn = await db.connect();
     const carrinhoId = await getOrCreateCarrinho(conn, usuarioId);
 
     const existing = await conn.query(
@@ -85,7 +87,7 @@ async function adicionarItem(req, res) {
     console.error('Erro ao adicionar item:', error);
     res.status(500).json({ error: 'Erro ao adicionar item à cesta' });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
 
@@ -98,8 +100,9 @@ async function atualizarItem(req, res) {
     return res.status(400).json({ error: 'Quantidade deve ser maior que zero' });
   }
 
-  const conn = await db.connect();
+  let conn;
   try {
+    conn = await db.connect();
     const carrinhoResult = await conn.query('SELECT id FROM carrinho WHERE usuario_id = $1', [usuarioId]);
     if (carrinhoResult.rows.length === 0) return res.status(404).json({ error: 'Cesta não encontrada' });
 
@@ -114,7 +117,7 @@ async function atualizarItem(req, res) {
     console.error('Erro ao atualizar item:', error);
     res.status(500).json({ error: 'Erro ao atualizar item da cesta' });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
 
@@ -122,8 +125,9 @@ async function removerItem(req, res) {
   const usuarioId = req.usuario.id;
   const { produto_id } = req.params;
 
-  const conn = await db.connect();
+  let conn;
   try {
+    conn = await db.connect();
     const carrinhoResult = await conn.query('SELECT id FROM carrinho WHERE usuario_id = $1', [usuarioId]);
     if (carrinhoResult.rows.length === 0) return res.status(404).json({ error: 'Cesta não encontrada' });
 
@@ -136,14 +140,15 @@ async function removerItem(req, res) {
     console.error('Erro ao remover item:', error);
     res.status(500).json({ error: 'Erro ao remover item da cesta' });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
 
 async function limparCesta(req, res) {
   const usuarioId = req.usuario.id;
-  const conn = await db.connect();
+  let conn;
   try {
+    conn = await db.connect();
     const carrinhoResult = await conn.query('SELECT id FROM carrinho WHERE usuario_id = $1', [usuarioId]);
     if (carrinhoResult.rows.length === 0) return res.json({ message: 'Cesta já está vazia' });
 
@@ -153,7 +158,7 @@ async function limparCesta(req, res) {
     console.error('Erro ao limpar cesta:', error);
     res.status(500).json({ error: 'Erro ao limpar cesta' });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
 
