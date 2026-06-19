@@ -120,7 +120,11 @@ Para iniciar individualmente, entre na pasta do serviço e execute `node index.j
 
 ## Documentação da API (Scalar)
 
-Com os serviços rodando, acesse a documentação interativa em:
+A documentação interativa da API está publicada online em:
+
+**https://jcliz.github.io/ganjj-api/**
+
+Com os serviços rodando localmente, ela também fica disponível em:
 
 **`http://localhost:3000/api/docs`**
 
@@ -251,3 +255,42 @@ Os arquivos de teste ficam em `services/<serviço>/tests/` e em `services/shared
 | `sale` | Promoções ativas por produto |
 | `loja` | Lojas físicas |
 | `contato_cliente` | Mensagens de contato enviadas pelos usuários |
+
+---
+
+## Gitflow
+
+Estratégia de branches utilizada no repositório do backend:
+
+![Gitflow do backend](docs/images/gitflow.png)
+
+---
+
+## Sprints
+
+Acompanhamento das sprints do projeto (boards do Kanban).
+
+### Sprint 1
+
+![Sprint 1 - 1](docs/images/sprint1-1.png)
+![Sprint 1 - 2](docs/images/sprint1-2.png)
+![Sprint 1 - final](docs/images/sprint1-final.png)
+
+### Sprint 2
+
+![Sprint 2 - 1](docs/images/sprint2-1.png)
+![Sprint 2 - final](docs/images/sprint2-final.png)
+
+### Sprint 3
+
+![Sprint 3 - 1](docs/images/sprint3-1.png)
+![Sprint 3 - 2](docs/images/sprint3-2.png)
+![Sprint 3 - 3](docs/images/sprint3-3.png)
+
+### Sprint 4
+
+![Sprint 4](docs/images/sprint4.png)
+
+### Sprint 5
+
+![Sprint 5](docs/images/sprint5.png)
